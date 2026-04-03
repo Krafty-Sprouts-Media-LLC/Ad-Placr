@@ -4,6 +4,12 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 03/04/2026
+
+### Fixed
+
+- Footer sticky: center block-level ad units (e.g. GPT containers, iframes) using flexbox on the bar and slots; responsive mobile override inline CSS no longer forces `display:block`, which broke horizontal centering.
+
 ## [0.1.4] - 03/04/2026
 
 ### Changed
@@ -40,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `development.md` with local setup notes.
 - Uninstall handler to remove stored options.
 
+[0.1.5]: https://github.com/kraftysprouts/ad-placr/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/kraftysprouts/ad-placr/compare/0.1.3...0.1.4
 [0.1.3]: https://github.com/kraftysprouts/ad-placr/compare/0.1.2...0.1.3
 [0.1.2]: https://github.com/kraftysprouts/ad-placr/compare/0.1.1...0.1.2

@@ -15,16 +15,31 @@
 	max-width: 100%;
 	box-sizing: border-box;
 	padding-bottom: env(safe-area-inset-bottom, 0);
-	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 	pointer-events: auto;
 }
 
 .ad-placr.ad-placr--footer-sticky .ad-placr__slot {
-	display: block;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 	width: 100%;
 	max-width: 100%;
 	margin: 0 auto;
 	box-sizing: border-box;
+}
+
+/* Block-level units (GPT, iframes) stay centered inside the flex slot. */
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot > div,
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot iframe,
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot ins {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 100%;
 }
 
 /* When a mobile override exists, default to the desktop (universal) slot until inline media queries apply. */
@@ -33,5 +48,5 @@
 }
 
 .ad-placr.ad-placr--footer-sticky .ad-placr__slot--universal {
-	display: block;
+	display: flex;
 }

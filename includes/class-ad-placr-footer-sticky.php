@@ -166,10 +166,17 @@ final class Ad_Placr_Footer_Sticky {
 
 		$bp = (int) $breakpoint;
 
+		/*
+		 * Match flex centering from assets/css/footer-sticky.css — do not use display:block here
+		 * or block-level ad roots stay left-aligned.
+		 */
+		$slot_visible = 'display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;width:100% !important;box-sizing:border-box !important;';
+
 		return sprintf(
-			'@media screen and (max-width: %1$dpx){.ad-placr--footer-sticky .ad-placr__slot--universal{display:none !important;}.ad-placr--footer-sticky .ad-placr__slot--mobile{display:block !important;}}' .
-			'@media screen and (min-width: %2$dpx){.ad-placr--footer-sticky .ad-placr__slot--universal{display:block !important;}.ad-placr--footer-sticky .ad-placr__slot--mobile{display:none !important;}}',
+			'@media screen and (max-width: %1$dpx){.ad-placr--footer-sticky .ad-placr__slot--universal{display:none !important;}.ad-placr--footer-sticky .ad-placr__slot--mobile{%2$s}}' .
+			'@media screen and (min-width: %3$dpx){.ad-placr--footer-sticky .ad-placr__slot--universal{%2$s}.ad-placr--footer-sticky .ad-placr__slot--mobile{display:none !important;}}',
 			$bp,
+			$slot_visible,
 			$bp + 1
 		);
 	}

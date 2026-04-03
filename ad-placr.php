@@ -3,7 +3,7 @@
  * Plugin Name:       Ad Placr
  * Plugin URI:        https://kraftysprouts.com
  * Description:       Flexible ad placements for WordPress — starting with a floating footer sticky slot.
- * Version:           0.1.4
+ * Version:           0.1.5
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Krafty Sprouts Media LLC
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AD_PLACR_VERSION', '0.1.4' );
+define( 'AD_PLACR_VERSION', '0.1.5' );
 define( 'AD_PLACR_PLUGIN_FILE', __FILE__ );
 define( 'AD_PLACR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AD_PLACR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
