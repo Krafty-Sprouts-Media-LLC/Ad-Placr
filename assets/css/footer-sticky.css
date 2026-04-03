@@ -1,0 +1,37 @@
+/**
+ * Footer sticky placement — base layout.
+ *
+ * @package AdPlacr
+ * @since 0.1.0
+ */
+
+.ad-placr.ad-placr--footer-sticky {
+	position: fixed;
+	z-index: 99990;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	padding-bottom: env(safe-area-inset-bottom, 0);
+	text-align: center;
+	pointer-events: auto;
+}
+
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	margin: 0 auto;
+	box-sizing: border-box;
+}
+
+/* When a mobile override exists, default to the desktop (universal) slot until inline media queries apply. */
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot--mobile {
+	display: none;
+}
+
+.ad-placr.ad-placr--footer-sticky .ad-placr__slot--universal {
+	display: block;
+}
