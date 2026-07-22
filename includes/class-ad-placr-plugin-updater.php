@@ -2,9 +2,18 @@
 /**
  * GitHub updates via Plugin Update Checker (Yahnis Elsts).
  *
+ * Bundled under lib/plugin-update-checker/. Missing library = silent no-op so
+ * activation never depends on Composer or a failed vendor checkout.
+ *
  * @link https://github.com/YahnisElsts/plugin-update-checker
  *
  * @package AdPlacr
+ * @since 0.1.3
+ */
+
+/**
+ * Registers the GitHub update checker against Krafty-Sprouts-Media-LLC/Ad-Placr.
+ *
  * @since 0.1.3
  */
 final class Ad_Placr_Plugin_Updater {

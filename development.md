@@ -11,9 +11,15 @@
 
 - **Main file:** `ad-placr.php` defines constants and loads class files from `includes/` with `require_once`.
 - **Third-party:** [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) lives under **`lib/plugin-update-checker/`** (bundled; commit when you publish).
+- **Admin assets:** `admin/js/in-content-slots.js`, `admin/css/settings-slots.css` — repeater UI for in-content slots (Settings → Ad Placr).
 - **Classes:** WordPress-style `class-ad-placr-*.php` filenames; classes are prefixed with `Ad_Placr_` to limit global namespace collisions.
-- **Settings:** `includes/class-ad-placr-settings-page.php` — option `ad_placr_settings` (array); footer sticky keys live under `footer_sticky`.
-- **Front end:** `includes/class-ad-placr-footer-sticky.php` — enqueues `assets/css/footer-sticky.css`, adds inline media-query CSS when a mobile override exists, prints markup on `wp_footer`. The mobile/universal split uses **782px** max-width by default (WordPress small-screen breakpoint). Override with the `ad_placr_footer_sticky_mobile_breakpoint` filter (returns an integer pixel width, clamped 320–1200).
+- **Settings:** `includes/class-ad-placr-settings-page.php` — option `ad_placr_settings` (array). Keys: `footer_sticky`, `in_content_slots` (list of slot arrays). Use **`Ad_Placr_Plugin::get_settings()`** for merged values with defaults.
+- **Footer sticky:** `includes/class-ad-placr-footer-sticky.php` — `wp_footer`, `assets/css/footer-sticky.css`. Mobile breakpoint filter: `ad_placr_footer_sticky_mobile_breakpoint` (default **782px**, clamped 320–1200).
+- **In-content:** `includes/class-ad-placr-in-content.php` — `the_content` priority **12**. Multiple slots; each slot has `id`, `enabled`, optional `title`, `paragraph_index`, `position` (`before`/`after`), `post_types`, `code`, `mobile_code`. Injection walks `<p>…</p>` chunks in one pass. Per-slot wrapper id: `ad-placr-ic-{slot_id}` for scoped responsive CSS. Filters: `ad_placr_in_content_should_inject`, `ad_placr_in_content_slot_should_display`, `ad_placr_in_content_mobile_breakpoint`.
+
+## Roadmap
+
+See **`roadmap.md`** for features under consideration (CPT picker, shortcodes, header placements, consent, etc.).
 
 Composer is **not** required for this plugin: there is no `vendor/` autoloader. If you later add Composer-only tooling (e.g. PHPCS), keep it dev-local and do not make activation depend on `vendor/autoload.php`.
 

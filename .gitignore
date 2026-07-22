@@ -8,3 +8,6 @@ Thumbs.db
 /ad-inserter/
 
 /vendor/
+
+.phpunit.result.cache
+
