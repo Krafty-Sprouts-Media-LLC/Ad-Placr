@@ -387,9 +387,9 @@ final class Ad_Placr_Positions {
 	}
 
 	/**
-	 * Keys that can render automatically: frontend âˆª special.
+	 * Keys that can render automatically: frontend union special.
 	 *
-	 * Manual keys are excluded â€” they never go through Frontend.
+	 * Manual keys are excluded -- they never go through Frontend.
 	 *
 	 * @since 2.2.0
 	 *
