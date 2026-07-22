@@ -151,6 +151,10 @@ final class Ad_Placr_Settings_Page {
 			isset( $value['in_content_slots'] ) && is_array( $value['in_content_slots'] ) ? $value['in_content_slots'] : array()
 		);
 
+		$out['disclosure_text'] = isset( $value['disclosure_text'] )
+			? sanitize_text_field( (string) wp_unslash( $value['disclosure_text'] ) )
+			: '';
+
 		return $out;
 	}
 
@@ -302,14 +306,37 @@ final class Ad_Placr_Settings_Page {
 
 		$fs = $settings['footer_sticky'];
 
+		$disclosure = isset( $settings['disclosure_text'] ) ? (string) $settings['disclosure_text'] : '';
+
 		$slots = isset( $settings['in_content_slots'] ) && is_array( $settings['in_content_slots'] ) ? $settings['in_content_slots'] : array();
 		if ( empty( $slots ) ) {
 			$slots = array( self::default_ic_slot_for_form() );
 		}
 
+		$ads_url        = admin_url( 'edit.php?post_type=ad_placr_ad' );
+		$placements_url = admin_url( 'edit.php?post_type=ad_placr_placement' );
+
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+			<div class="notice notice-info">
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: 1: Ads admin URL, 2: Placements admin URL */
+							__( 'Front-end ads are served from <a href="%1$s"><strong>Ads</strong></a> and <a href="%2$s"><strong>Placements</strong></a> after migration. The fields below are kept for reference and re-migration; editing them does not change live output until you re-run migration.', 'ad-placr' ),
+							esc_url( $ads_url ),
+							esc_url( $placements_url )
+						),
+						array(
+							'a'      => array( 'href' => array() ),
+							'strong' => array(),
+						)
+					);
+					?>
+				</p>
+			</div>
 			<?php if ( ! current_user_can( 'unfiltered_html' ) ) : ?>
 				<div class="notice notice-warning">
 					<p><?php esc_html_e( 'Your account cannot save unfiltered HTML. Ad scripts may be stripped on save. Use an administrator account or unfiltered_html capability for full ad tags.', 'ad-placr' ); ?></p>
@@ -317,6 +344,22 @@ final class Ad_Placr_Settings_Page {
 			<?php endif; ?>
 			<form action="options.php" method="post" id="ad-placr-settings-form">
 				<?php settings_fields( 'ad_placr' ); ?>
+
+				<h2 class="title"><?php esc_html_e( 'Disclosure', 'ad-placr' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Optional label shown with each ad wrapper on the front end (for example “Advertisement”). Leave empty to omit the disclosure node.', 'ad-placr' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">
+							<label for="ad-placr-disclosure-text"><?php esc_html_e( 'Disclosure text', 'ad-placr' ); ?></label>
+						</th>
+						<td>
+							<textarea class="large-text" rows="2" id="ad-placr-disclosure-text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[disclosure_text]"><?php echo esc_textarea( $disclosure ); ?></textarea>
+						</td>
+					</tr>
+				</table>
+
 				<h2 class="title"><?php esc_html_e( 'Footer sticky', 'ad-placr' ); ?></h2>
 				<p class="description">
 					<?php esc_html_e( 'One universal snippet is used on all viewports. If you add a mobile override, that snippet is used on small screens (up to 782px, the WordPress small-screen breakpoint); the universal snippet is used on larger screens.', 'ad-placr' ); ?>

@@ -222,6 +222,13 @@ final class Ad_Placr_Migration {
 
 			$post_types = isset( $slot['post_types'] ) && is_array( $slot['post_types'] ) ? array_values( $slot['post_types'] ) : array();
 
+			/*
+			 * Preserve legacy slot id so front-end DOM ids stay `#ad-placr-ic-{slot_id}`
+			 * after migration (same CSS scoping as the option-era repeater).
+			 */
+			$raw_slot_id = (string) ( $slot['id'] ?? '' );
+			$slot_id     = strtolower( (string) preg_replace( '/[^a-z0-9_\-]/', '', $raw_slot_id ) );
+
 			$defs['placements'][] = array(
 				'title'     => '' !== (string) ( $slot['title'] ?? '' ) ? (string) $slot['title'] : 'In-content placement',
 				'position'  => $position,
@@ -231,6 +238,7 @@ final class Ad_Placr_Migration {
 					'post_types' => $post_types,
 					'contexts'   => array( 'singular' ),
 					'devices'    => array( 'desktop', 'tablet', 'mobile' ),
+					'slot_id'    => $slot_id,
 				),
 			);
 		}

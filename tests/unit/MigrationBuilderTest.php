@@ -60,5 +60,6 @@ final class MigrationBuilderTest extends TestCase {
 		$this->assertSame( 'in_content_before_paragraph', $defs['placements'][0]['position'] );
 		$this->assertSame( 3, $defs['placements'][0]['paragraph'] );
 		$this->assertSame( array( 'post' ), $defs['placements'][0]['targeting']['post_types'] );
+		$this->assertSame( 'ic_abc', $defs['placements'][0]['targeting']['slot_id'] );
 	}
 }

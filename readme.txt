@@ -4,7 +4,7 @@ Tags: ads, advertising, footer, sticky, content
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,9 @@ Ad Placr helps you place ad code in consistent locations: a floating footer stic
 3. Go to **Settings → Ad Placr** to configure placements.
 
 == Changelog ==
+
+= 2.1.0 =
+* CPT-driven front end (renderer, footer/in-content), disclosure setting, settings notice, migration preserves in-content slot_id. See changelog.md.
 
 = 2.0.0 =
 * Major rebuild foundations: position registry, Ad/Placement CPTs, legacy settings migration, in-content package files. See changelog.md.

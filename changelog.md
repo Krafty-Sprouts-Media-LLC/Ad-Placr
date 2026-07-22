@@ -4,6 +4,22 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 22/07/2026
+
+### Added
+
+- **Disclosure text** setting (`disclosure_text`) — optional front-end label on each ad wrapper; empty omits the disclosure node.
+- **Settings notice** — admin blurb that live ads come from **Ads** and **Placements** CPTs after migration.
+- **CPT front-end cutover** — sticky footer and in-content output driven by Placement/Ad posts via `Ad_Placr_Renderer` (legacy option fields retained for reference / re-migration).
+
+### Fixed
+
+- **Migration `slot_id`** — in-content placements now store `targeting['slot_id']` so DOM ids keep `#ad-placr-ic-{legacy_slot_id}` parity after migrate.
+
+### Changed
+
+- Version bump to **2.1.0** (`ad-placr.php`, `readme.txt` Stable tag).
+
 ## [2.0.0] - 22/07/2026
 
 ### Added
