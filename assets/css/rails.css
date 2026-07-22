@@ -1,0 +1,33 @@
+/**
+ * Sticky left/right rail placements — fixed side bands.
+ *
+ * Hidden below 960px so rails never cover narrow viewports.
+ *
+ * @package AdPlacr
+ * @since 2.2.0
+ */
+
+.ad-placr--rail-left {
+	position: fixed;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 9998;
+	max-width: 160px;
+}
+
+.ad-placr--rail-right {
+	position: fixed;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 9998;
+	max-width: 160px;
+}
+
+@media (max-width: 960px) {
+	.ad-placr--rail-left,
+	.ad-placr--rail-right {
+		display: none !important;
+	}
+}

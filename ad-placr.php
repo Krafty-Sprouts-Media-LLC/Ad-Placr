@@ -41,6 +41,7 @@ require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-ad.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-placement.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-migration.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-renderer.php';
+require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-frontend.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-plugin-updater.php';
 
 Ad_Placr_Plugin::instance()->boot();
