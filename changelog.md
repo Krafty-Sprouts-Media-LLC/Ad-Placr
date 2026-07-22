@@ -4,20 +4,21 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 22/07/2026
+## [2.0.0] - 22/07/2026
 
 ### Added
 
+- **Major rebuild foundations** — Ad ↔ Placement CPT model begins here (Adsly feature intent, Ad Placr quality).
 - **Dev tooling** — Composer scripts for PHPCS, PHPStan, and PHPUnit (`composer test` / lint / analyse).
 - **Canonical position registry** (`Ad_Placr_Positions`) — filterable taxonomy keys for all placement positions.
-- **Ad CPT** (`ad_placr_ad`) — reusable creative posts with code / mobile code / status meta.
+- **Ad CPT** (`ad_placr_ad`) — reusable creative posts with code / mobile code / status meta (`@since 2.0.0`).
 - **Placement CPT** (`ad_placr_placement`) — position + targeting + weighted ad list (rotation-ready).
 - **One-time migration** (`Ad_Placr_Migration`) — converts legacy `ad_placr_settings` (footer sticky + in-content slots) into Ad + Placement posts; DB version bumps only when migration succeeds (or when there is nothing to migrate).
 - **In-content placement files** shipped with the package (`class-ad-placr-in-content.php`, front-end CSS, settings repeater assets) so clean checkouts load and the 1.1+ settings UI works.
 
 ### Changed
 
-- Version bump to **1.2.0** (`ad-placr.php`, `readme.txt` Stable tag).
+- Version bump to **2.0.0** (`ad-placr.php`, `readme.txt` Stable tag). Legacy option-based footer/in-content renderers remain active during the phased cutover.
 
 ## [1.1.2] - 22/07/2026
 
@@ -107,7 +108,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `development.md` with local setup notes.
 - Uninstall handler to remove stored options.
 
-[1.2.0]: https://github.com/kraftysprouts/ad-placr/compare/1.1.2...1.2.0
+[2.0.0]: https://github.com/kraftysprouts/ad-placr/compare/1.1.2...2.0.0
 [1.1.2]: https://github.com/kraftysprouts/ad-placr/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/kraftysprouts/ad-placr/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/kraftysprouts/ad-placr/compare/0.1.6...1.1.0
