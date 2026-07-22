@@ -4,6 +4,23 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 22/07/2026
+
+### Added
+
+- **Frontend dispatcher** (`Ad_Placr_Frontend`) — registers every `handler=frontend` position to its WordPress hook and renders via `Ad_Placr_Renderer`.
+- **Automatic positions wired** — before/after post content, header/footer, sticky left/right rails, front page, blog index, and archive tops/bottoms all render (no orphan keys).
+- **Rails CSS** (`assets/css/rails.css`) — fixed left/right sticky rails on wide viewports; hidden below 960px.
+- **Registry hook metadata** — `Ad_Placr_Positions::defaults()` carries `hook`, `priority`, `render_mode`, and `handler`; partition helpers (`partition_from`, `frontend_keys`, etc.) plus orphan-invariant unit tests.
+
+### Changed
+
+- Version bump to **2.2.0** (`ad-placr.php`, `readme.txt` Stable tag).
+
+### Notes
+
+- **Theme caveat:** `before_header` and `after_header` hook `wp_body_open`. Themes that omit `wp_body_open()` will not show those placements.
+
 ## [2.1.0] - 22/07/2026
 
 ### Added
