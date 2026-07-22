@@ -16,3 +16,4 @@ require dirname( __DIR__ ) . '/vendor/autoload.php';
 // Class files under test are required here as tasks add them.
 require dirname( __DIR__ ) . '/includes/class-ad-placr-positions.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-ad.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-placement.php';
