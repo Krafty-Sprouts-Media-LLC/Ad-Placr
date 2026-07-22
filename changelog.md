@@ -4,6 +4,19 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 22/07/2026
+
+### Added
+
+- **Shortcode** (`[ad_placr placement="ID"]` / `[ad_placr ad="ID"]`) — manual embeds via shared `Ad_Placr_Renderer`; `placement` wins when both attrs are set.
+- **Sidebar widget** (`Ad_Placr_Widget`) — pick a Placement, optional sticky CSS (`assets/css/widget.css`).
+- **`Ad_Placr_Renderer::render_ad()`** — single-ad render path used by the shortcode `ad` attribute and by placement weighted pick.
+- **Meta-key invariant tests** — manual handlers must not hard-code `_ad_placr_*` meta strings (Adsly bug #1 guard).
+
+### Changed
+
+- Version bump to **2.3.0** (`ad-placr.php`, `readme.txt` Stable tag).
+
 ## [2.2.0] - 22/07/2026
 
 ### Added

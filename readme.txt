@@ -4,7 +4,7 @@ Tags: ads, advertising, footer, sticky, content
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,9 @@ Ad Placr helps you place ad code in consistent locations: a floating footer stic
 3. Go to **Settings → Ad Placr** to configure placements.
 
 == Changelog ==
+
+= 2.3.0 =
+* Shortcode [ad_placr placement|ad], sidebar widget with optional sticky, Renderer::render_ad. See changelog.md.
 
 = 2.2.0 =
 * Frontend dispatcher for automatic positions, rails CSS, registry hook metadata; themes must call wp_body_open for header placements. See changelog.md.

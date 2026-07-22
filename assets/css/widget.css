@@ -1,0 +1,12 @@
+/**
+ * Sticky sidebar widget modifier for Ad Placr.
+ *
+ * @package AdPlacr
+ * @since 2.3.0
+ */
+
+.ad-placr--widget-sticky {
+	position: sticky;
+	top: 1rem;
+	z-index: 2;
+}

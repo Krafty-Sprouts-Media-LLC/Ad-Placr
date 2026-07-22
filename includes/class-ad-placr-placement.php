@@ -157,7 +157,7 @@ final class Ad_Placr_Placement {
 	public static function choose_weighted( array $weighted, int $roll ): ?int {
 		$total = 0;
 		foreach ( $weighted as $row ) {
-			$total += max( 0, (int) ( $row['weight'] ?? 0 ) );
+			$total += max( 0, (int) $row['weight'] );
 		}
 
 		if ( $total <= 0 ) {
@@ -168,7 +168,7 @@ final class Ad_Placr_Placement {
 
 		$cursor = 0;
 		foreach ( $weighted as $row ) {
-			$weight = max( 0, (int) ( $row['weight'] ?? 0 ) );
+			$weight = max( 0, (int) $row['weight'] );
 			if ( $weight <= 0 ) {
 				continue;
 			}

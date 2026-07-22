@@ -186,6 +186,26 @@ final class Ad_Placr_Renderer {
 			return '';
 		}
 
+		return self::render_ad( $ad_id, $args );
+	}
+
+	/**
+	 * Build wrapper HTML for a single active ad.
+	 *
+	 * Same `$args` shape as `render_placement()`. Used by the shortcode `ad`
+	 * attribute and as the terminal step after weighted placement selection.
+	 *
+	 * @since 2.3.0
+	 *
+	 * @param int                  $ad_id Ad post ID.
+	 * @param array<string, mixed> $args  Wrapper args (see render_placement).
+	 * @return string Wrapper HTML, or empty string when nothing should render.
+	 */
+	public static function render_ad( int $ad_id, array $args ): string {
+		if ( ! Ad_Placr_Ad::is_active( $ad_id ) ) {
+			return '';
+		}
+
 		$code        = Ad_Placr_Ad::get_code( $ad_id );
 		$mobile_code = Ad_Placr_Ad::get_mobile_code( $ad_id );
 

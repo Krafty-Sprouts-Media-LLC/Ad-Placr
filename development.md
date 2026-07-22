@@ -16,10 +16,12 @@
 - **Settings:** `includes/class-ad-placr-settings-page.php` — option `ad_placr_settings` (array). Keys: `footer_sticky`, `in_content_slots` (list of slot arrays). Use **`Ad_Placr_Plugin::get_settings()`** for merged values with defaults.
 - **Footer sticky:** `includes/class-ad-placr-footer-sticky.php` — `wp_footer`, `assets/css/footer-sticky.css`. Mobile breakpoint filter: `ad_placr_footer_sticky_mobile_breakpoint` (default **782px**, clamped 320–1200).
 - **In-content:** `includes/class-ad-placr-in-content.php` — `the_content` priority **12**. Multiple slots; each slot has `id`, `enabled`, optional `title`, `paragraph_index`, `position` (`before`/`after`), `post_types`, `code`, `mobile_code`. Injection walks `<p>…</p>` chunks in one pass. Per-slot wrapper id: `ad-placr-ic-{slot_id}` for scoped responsive CSS. Filters: `ad_placr_in_content_should_inject`, `ad_placr_in_content_slot_should_display`, `ad_placr_in_content_mobile_breakpoint`.
+- **Shortcode:** `[ad_placr placement="ID"]` or `[ad_placr ad="ID"]` (`includes/class-ad-placr-shortcode.php`). When both are set, `placement` wins. Output goes through `Ad_Placr_Renderer`.
+- **Widget:** Appearance → Widgets → **Ad Placr** (`includes/class-ad-placr-widget.php`) — select a Placement; optional sticky uses `assets/css/widget.css`.
 
 ## Roadmap
 
-See **`roadmap.md`** for features under consideration (CPT picker, shortcodes, header placements, consent, etc.).
+See **`roadmap.md`** and **`IMPLEMENTATION-PLAN.md`** for the rebuild phases (targeting, analytics, Gutenberg block, etc.).
 
 Composer is **not** required for this plugin: there is no `vendor/` autoloader. If you later add Composer-only tooling (e.g. PHPCS), keep it dev-local and do not make activation depend on `vendor/autoload.php`.
 
