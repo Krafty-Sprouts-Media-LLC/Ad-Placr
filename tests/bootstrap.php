@@ -14,3 +14,4 @@ define( 'AD_PLACR_PLUGIN_URL', 'http://example.test/wp-content/plugins/ad-placr/
 require dirname( __DIR__ ) . '/vendor/autoload.php';
 
 // Class files under test are required here as tasks add them.
+require dirname( __DIR__ ) . '/includes/class-ad-placr-positions.php';
