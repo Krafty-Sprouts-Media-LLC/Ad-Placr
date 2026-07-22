@@ -1,0 +1,14 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	level: 5
+	paths:
+		- ad-placr.php
+		- includes
+	excludePaths:
+		- lib/*
+		- adsly/*
+		- ad-inserter/*
+	bootstrapFiles:
+		- ad-placr.php

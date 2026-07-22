@@ -1,3 +1,10 @@
 .DS_Store
 Thumbs.db
 *.zip
+
+# Reference-only third-party plugins — never committed or shipped.
+# Kept locally to mine ideas/patterns during the ad-manager rebuild.
+/adsly/
+/ad-inserter/
+
+/vendor/
