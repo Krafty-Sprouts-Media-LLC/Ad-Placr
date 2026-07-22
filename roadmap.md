@@ -22,6 +22,7 @@ Deferred deliberately (YAGNI). Each becomes its own spec when picked up.
 - **`ads.txt`** management from admin.
 - **Custom / anti-adblock CSS class** naming option.
 - **Gutenberg block** for manual placement (mirrors the shortcode).
+- **Admin analytics charts / dashboards** — graphs beyond Phase 7 list-table impression columns (Phase 6 stores events only).
 
 ### Tier 2 — targeting depth
 - Taxonomy / category / tag / specific post ID / URL-pattern black + white lists.

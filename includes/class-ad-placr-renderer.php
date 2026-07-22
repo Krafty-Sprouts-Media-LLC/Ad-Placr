@@ -70,6 +70,8 @@ final class Ad_Placr_Renderer {
 	 * @param string $code           Universal / desktop ad code (raw).
 	 * @param string $mobile_code    Mobile override ad code (raw).
 	 * @param string $disclosure     Optional label; empty → omitted.
+	 * @param int    $ad_id          Ad post ID for tracking attrs (0 omits).
+	 * @param int    $placement_id   Placement post ID for tracking attrs (0 omits).
 	 * @return string Complete wrapper HTML string.
 	 */
 	public static function build_wrapper_html(
@@ -78,9 +80,19 @@ final class Ad_Placr_Renderer {
 		int $breakpoint,
 		string $code,
 		string $mobile_code,
-		string $disclosure
+		string $disclosure,
+		int $ad_id = 0,
+		int $placement_id = 0
 	): string {
-		$html  = '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ' . esc_attr( $modifier_class ) . '" data-mobile-max="' . esc_attr( (string) $breakpoint ) . '">';
+		$html = '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ' . esc_attr( $modifier_class ) . '" data-mobile-max="' . esc_attr( (string) $breakpoint ) . '"';
+		if ( $ad_id > 0 ) {
+			$html .= ' data-ad-id="' . esc_attr( (string) $ad_id ) . '"';
+		}
+		if ( $placement_id > 0 ) {
+			$html .= ' data-placement-id="' . esc_attr( (string) $placement_id ) . '"';
+		}
+		$html .= '>';
+
 		$label = trim( $disclosure );
 
 		if ( '' !== $label ) {
@@ -186,6 +198,9 @@ final class Ad_Placr_Renderer {
 			return '';
 		}
 
+		$args['placement_id'] = $placement_id;
+		$args['ad_id']        = $ad_id;
+
 		return self::render_ad( $ad_id, $args );
 	}
 
@@ -216,10 +231,12 @@ final class Ad_Placr_Renderer {
 		$settings   = Ad_Placr_Plugin::get_settings();
 		$disclosure = isset( $settings['disclosure_text'] ) ? trim( (string) $settings['disclosure_text'] ) : '';
 
-		$dom_id         = isset( $args['dom_id'] ) ? (string) $args['dom_id'] : '';
-		$modifier_class = isset( $args['modifier_class'] ) ? (string) $args['modifier_class'] : '';
-		$breakpoint     = isset( $args['breakpoint'] ) ? (int) $args['breakpoint'] : 782;
-		$do_echo        = ! empty( $args['echo'] );
+		$dom_id          = isset( $args['dom_id'] ) ? (string) $args['dom_id'] : '';
+		$modifier_class  = isset( $args['modifier_class'] ) ? (string) $args['modifier_class'] : '';
+		$breakpoint      = isset( $args['breakpoint'] ) ? (int) $args['breakpoint'] : 782;
+		$do_echo         = ! empty( $args['echo'] );
+		$track_ad_id     = isset( $args['ad_id'] ) ? (int) $args['ad_id'] : $ad_id;
+		$track_placement = isset( $args['placement_id'] ) ? (int) $args['placement_id'] : 0;
 
 		$html = self::build_wrapper_html(
 			$dom_id,
@@ -227,7 +244,9 @@ final class Ad_Placr_Renderer {
 			$breakpoint,
 			$code,
 			$mobile_code,
-			$disclosure
+			$disclosure,
+			$track_ad_id,
+			$track_placement
 		);
 
 		if ( $do_echo ) {

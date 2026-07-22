@@ -53,6 +53,21 @@ final class RendererTest extends TestCase {
 		$this->assertStringContainsString( 'Advertisement', $html );
 	}
 
+	public function test_wrapper_includes_tracking_data_attrs(): void {
+		$html = Ad_Placr_Renderer::build_wrapper_html(
+			'ad-placr-sc-1',
+			'ad-placr--manual-shortcode',
+			782,
+			'A',
+			'',
+			'',
+			42,
+			9
+		);
+		$this->assertStringContainsString( 'data-ad-id="42"', $html );
+		$this->assertStringContainsString( 'data-placement-id="9"', $html );
+	}
+
 	public function test_mobile_css_contains_breakpoint_and_selector(): void {
 		$css = Ad_Placr_Renderer::build_mobile_pair_css( '#ad-placr-footer-sticky', 782 );
 		$this->assertStringContainsString( 'max-width: 782px', $css );

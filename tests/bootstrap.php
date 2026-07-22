@@ -6,6 +6,9 @@
  */
 
 define( 'ABSPATH', __DIR__ . '/' );
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
 define( 'AD_PLACR_VERSION', 'test' );
 define( 'AD_PLACR_PLUGIN_FILE', dirname( __DIR__ ) . '/ad-placr.php' );
 define( 'AD_PLACR_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
@@ -99,3 +102,5 @@ require dirname( __DIR__ ) . '/includes/class-ad-placr-targeting.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-shortcode.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-widget.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-admin.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-analytics.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-rest.php';

@@ -4,7 +4,7 @@ Tags: ads, advertising, footer, sticky, content
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,9 @@ Ad Placr helps you place ad code in consistent locations: a floating footer stic
 3. Go to **Settings → Ad Placr** to configure placements.
 
 == Changelog ==
+
+= 2.5.0 =
+* Opt-in analytics storage + always-on impression/click hooks, REST track endpoint, viewability JS, 90-day retention. See changelog.md.
 
 = 2.4.0 =
 * Unified Placement targeting gate (contexts, users, schedule, URL, taxonomies); fail-open defaults; no UA device sniffing. See changelog.md.

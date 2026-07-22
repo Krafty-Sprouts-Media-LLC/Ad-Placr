@@ -4,6 +4,25 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 22/07/2026
+
+### Added
+
+- **Analytics** (`Ad_Placr_Analytics`) — always-on `ad_placr_impression` / `ad_placr_click` actions; opt-in `{prefix}ad_placr_events` table; 90-day retention cron `ad_placr_analytics_cleanup`.
+- **REST track endpoint** — `POST /wp-json/ad-placr/v1/track` (WP REST nonce).
+- **Front-end tracking JS** — `IntersectionObserver` (≥50% once) + click; `assets/js/tracking.js`.
+- **Settings toggle** — `analytics_enabled` (default off); hooks still fire when storage is disabled.
+- Wrapper `data-ad-id` / `data-placement-id` for tracking.
+- Roadmap: admin analytics charts deferred (Phase 6 stores events only).
+
+### Changed
+
+- Version bump to **2.5.0**; uninstall drops events table + cleanup cron + related options.
+
+### Notes
+
+- **No PII** in the events table (no IP/UA/URL). Charts, GEO, CTR auto-optimization, and cache-safe client rotation remain on `roadmap.md`.
+
 ## [2.4.0] - 22/07/2026
 
 ### Added

@@ -155,6 +155,8 @@ final class Ad_Placr_Settings_Page {
 			? sanitize_text_field( (string) wp_unslash( $value['disclosure_text'] ) )
 			: '';
 
+		$out['analytics_enabled'] = ! empty( $value['analytics_enabled'] );
+
 		return $out;
 	}
 
@@ -306,7 +308,8 @@ final class Ad_Placr_Settings_Page {
 
 		$fs = $settings['footer_sticky'];
 
-		$disclosure = isset( $settings['disclosure_text'] ) ? (string) $settings['disclosure_text'] : '';
+		$disclosure        = isset( $settings['disclosure_text'] ) ? (string) $settings['disclosure_text'] : '';
+		$analytics_enabled = ! empty( $settings['analytics_enabled'] );
 
 		$slots = isset( $settings['in_content_slots'] ) && is_array( $settings['in_content_slots'] ) ? $settings['in_content_slots'] : array();
 		if ( empty( $slots ) ) {
@@ -356,6 +359,22 @@ final class Ad_Placr_Settings_Page {
 						</th>
 						<td>
 							<textarea class="large-text" rows="2" id="ad-placr-disclosure-text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[disclosure_text]"><?php echo esc_textarea( $disclosure ); ?></textarea>
+						</td>
+					</tr>
+				</table>
+
+				<h2 class="title"><?php esc_html_e( 'Analytics', 'ad-placr' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'External impression/click hooks always fire for GA and other listeners. First-party event storage is optional (90-day retention, no PII).', 'ad-placr' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'First-party storage', 'ad-placr' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[analytics_enabled]" value="1" <?php checked( $analytics_enabled ); ?> />
+								<?php esc_html_e( 'Store impressions and clicks in the Ad Placr events table.', 'ad-placr' ); ?>
+							</label>
 						</td>
 					</tr>
 				</table>

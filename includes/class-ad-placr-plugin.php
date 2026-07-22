@@ -89,6 +89,8 @@ final class Ad_Placr_Plugin {
 		Ad_Placr_Shortcode::register();
 		Ad_Placr_Widget::register();
 		Ad_Placr_Admin::register();
+		Ad_Placr_Analytics::register();
+		Ad_Placr_Rest::register();
 		Ad_Placr_Ad::register();
 		Ad_Placr_Placement::register();
 		Ad_Placr_Migration::register();
@@ -117,6 +119,8 @@ final class Ad_Placr_Plugin {
 		$merged = wp_parse_args( $existing, $defaults );
 
 		update_option( 'ad_placr_settings', $merged, false );
+
+		Ad_Placr_Analytics::install();
 	}
 
 	/**
@@ -132,13 +136,14 @@ final class Ad_Placr_Plugin {
 	 */
 	public static function default_settings(): array {
 		return array(
-			'footer_sticky'    => array(
+			'footer_sticky'     => array(
 				'enabled'     => false,
 				'code'        => '',
 				'mobile_code' => '',
 			),
-			'in_content_slots' => array(),
-			'disclosure_text'  => '',
+			'in_content_slots'  => array(),
+			'disclosure_text'   => '',
+			'analytics_enabled' => false,
 		);
 	}
 
