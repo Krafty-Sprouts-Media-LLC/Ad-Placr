@@ -13,8 +13,33 @@ define( 'AD_PLACR_PLUGIN_URL', 'http://example.test/wp-content/plugins/ad-placr/
 
 require dirname( __DIR__ ) . '/vendor/autoload.php';
 
+if ( ! function_exists( 'esc_attr' ) ) {
+	/**
+	 * Thin esc_attr stub for unit tests without WordPress.
+	 *
+	 * @param mixed $text Text to escape.
+	 * @return string
+	 */
+	function esc_attr( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Thin esc_html stub for unit tests without WordPress.
+	 *
+	 * @param mixed $text Text to escape.
+	 * @return string
+	 */
+	function esc_html( $text ) {
+		return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 // Class files under test are required here as tasks add them.
 require dirname( __DIR__ ) . '/includes/class-ad-placr-positions.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-ad.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-placement.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-migration.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-renderer.php';
