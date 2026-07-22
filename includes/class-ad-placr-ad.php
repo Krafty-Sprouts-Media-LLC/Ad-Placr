@@ -128,4 +128,28 @@ final class Ad_Placr_Ad {
 
 		return 'active' === self::normalize_status( get_post_meta( $ad_id, self::META_STATUS, true ) );
 	}
+
+	/**
+	 * Universal ad code for an ad.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return string
+	 */
+	public static function get_code( int $ad_id ): string {
+		return (string) get_post_meta( $ad_id, self::META_CODE, true );
+	}
+
+	/**
+	 * Mobile override code for an ad.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return string
+	 */
+	public static function get_mobile_code( int $ad_id ): string {
+		return (string) get_post_meta( $ad_id, self::META_MOBILE_CODE, true );
+	}
 }

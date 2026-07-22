@@ -193,4 +193,48 @@ final class Ad_Placr_Placement {
 	public static function get_ads( int $placement_id ): array {
 		return self::normalize_ads( get_post_meta( $placement_id, self::META_ADS, true ) );
 	}
+
+	/**
+	 * Normalize placement status. Pure.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param mixed $raw Raw status.
+	 * @return string
+	 */
+	public static function normalize_status( $raw ): string {
+		return 'active' === strtolower( (string) $raw ) ? 'active' : 'inactive';
+	}
+
+	/**
+	 * Whether targeting allows this singular post type. Pure.
+	 *
+	 * `contexts` containing `all` always matches. `singular` requires `$post_type`
+	 * to be listed in `post_types` (empty allow-list → no match).
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array<string, mixed> $targeting Targeting blob.
+	 * @param string               $post_type Current post type.
+	 * @return bool
+	 */
+	public static function targeting_matches_singular( array $targeting, string $post_type ): bool {
+		$contexts = isset( $targeting['contexts'] ) && is_array( $targeting['contexts'] )
+			? $targeting['contexts']
+			: array();
+
+		if ( in_array( 'all', $contexts, true ) ) {
+			return true;
+		}
+
+		if ( ! in_array( 'singular', $contexts, true ) ) {
+			return false;
+		}
+
+		$types = isset( $targeting['post_types'] ) && is_array( $targeting['post_types'] )
+			? $targeting['post_types']
+			: array();
+
+		return in_array( $post_type, $types, true );
+	}
 }
