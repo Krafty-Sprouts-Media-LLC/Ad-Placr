@@ -1,10 +1,12 @@
 <?php
 /**
- * In-content placements: multiple slots before/after numbered paragraphs (HTML <p> blocks).
+ * In-content placements: inject ads before/after numbered paragraphs (HTML <p> blocks).
  *
- * Hooks `the_content` at priority 12. Slots are collected into before/after maps keyed by
- * 1-based paragraph index, then injected in one walk over `<p>…</p>` chunks so several
- * slots can target the same paragraph without re-parsing the HTML repeatedly.
+ * Hooks `the_content` at priority 12. Output is driven by active
+ * `in_content_before_paragraph` / `in_content_after_paragraph` Placement CPTs via
+ * `Ad_Placr_Renderer`. Placements are bucketed into before/after maps keyed by
+ * 1-based paragraph index, then injected in one walk over `<p>…</p>` chunks so
+ * several placements can target the same paragraph without re-parsing HTML.
  *
  * @package AdPlacr
  * @since 0.1.6
@@ -16,13 +18,6 @@
  * @since 0.1.6
  */
 final class Ad_Placr_In_Content {
-
-	/**
-	 * Visible slot stack for inline CSS (must match assets/css/in-content.css).
-	 *
-	 * @since 0.1.6
-	 */
-	private const SLOT_VISIBLE_INLINE = 'display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;width:100% !important;box-sizing:border-box !important;';
 
 	/**
 	 * Register hooks.
@@ -37,7 +32,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Enqueue styles when any active slot may render.
+	 * Enqueue styles when any displayable in-content placement may render.
 	 *
 	 * @since 0.1.6
 	 *
@@ -55,7 +50,7 @@ final class Ad_Placr_In_Content {
 			AD_PLACR_VERSION
 		);
 
-		$inline = self::collect_inline_css_for_slots( self::get_active_slots_for_request() );
+		$inline = self::collect_inline_css_for_placements( self::get_displayable_placements() );
 
 		if ( '' !== $inline ) {
 			wp_add_inline_style( 'ad-placr-in-content', $inline );
@@ -63,7 +58,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Whether any slot could run on this request (singular + post type + has code).
+	 * Whether any in-content placement could run on this request (singular + targeting).
 	 *
 	 * @since 1.1.0
 	 *
@@ -74,8 +69,182 @@ final class Ad_Placr_In_Content {
 			return false;
 		}
 
-		foreach ( self::get_slots() as $slot ) {
-			if ( self::slot_has_output( $slot ) && self::slot_matches_post_type( $slot ) ) {
+		return ! empty( self::get_displayable_placements() );
+	}
+
+	/**
+	 * Active in-content placements that match singular targeting for this request.
+	 *
+	 * Each row carries placement id, before/after position, targeting, a BC slot-shaped
+	 * array for legacy filters, and a stable DOM slug for wrapper / CSS scoping.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @return array<int, array{
+	 *     placement_id: int,
+	 *     position: string,
+	 *     targeting: array<string, mixed>,
+	 *     slot: array<string, mixed>,
+	 *     dom_slug: string
+	 * }>
+	 */
+	private static function get_displayable_placements(): array {
+		$post_type = get_post_type();
+		if ( ! is_string( $post_type ) ) {
+			return array();
+		}
+
+		$out = array();
+
+		/*
+		 * Query both paragraph positions. Position taxonomy key decides before vs after;
+		 * paragraph index lives on the targeting blob (set at migration / admin save).
+		 */
+		$by_position = array(
+			Ad_Placr_Positions::IN_CONTENT_BEFORE_PARAGRAPH => 'before',
+			Ad_Placr_Positions::IN_CONTENT_AFTER_PARAGRAPH => 'after',
+		);
+
+		foreach ( $by_position as $position_key => $before_after ) {
+			foreach ( Ad_Placr_Placement::query_ids_for_position( $position_key ) as $placement_id ) {
+				if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
+					continue;
+				}
+
+				$targeting = Ad_Placr_Placement::get_targeting( $placement_id );
+
+				if ( ! Ad_Placr_Placement::targeting_matches_singular( $targeting, $post_type ) ) {
+					continue;
+				}
+
+				$paragraph = self::clamp_paragraph_index( $targeting );
+				$dom_slug  = self::resolve_dom_slug( $targeting, $placement_id );
+				$slot      = self::build_slot_shaped_array( $targeting, $dom_slug, $paragraph, $before_after );
+
+				$out[] = array(
+					'placement_id' => $placement_id,
+					'position'     => $before_after,
+					'targeting'    => $targeting,
+					'slot'         => $slot,
+					'dom_slug'     => $dom_slug,
+				);
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Clamp targeting paragraph to 1–100 (1-based index into `<p>` blocks).
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array<string, mixed> $targeting Placement targeting blob.
+	 * @return int
+	 */
+	private static function clamp_paragraph_index( array $targeting ): int {
+		$n = isset( $targeting['paragraph'] ) ? absint( $targeting['paragraph'] ) : 1;
+
+		return max( 1, min( 100, $n ) );
+	}
+
+	/**
+	 * Stable DOM id slug: targeting `slot_id` when set, else placement post ID.
+	 *
+	 * Sanitized to HTML id-safe characters so CSS `#ad-placr-ic-{slug}` stays valid.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array<string, mixed> $targeting    Placement targeting blob.
+	 * @param int                  $placement_id Placement post ID.
+	 * @return string
+	 */
+	private static function resolve_dom_slug( array $targeting, int $placement_id ): string {
+		$raw = '';
+
+		if ( isset( $targeting['slot_id'] ) && is_scalar( $targeting['slot_id'] ) ) {
+			$raw = (string) $targeting['slot_id'];
+		}
+
+		$slug = preg_replace( '/[^a-zA-Z0-9_\-]/', '', $raw );
+		if ( ! is_string( $slug ) || '' === $slug ) {
+			return (string) $placement_id;
+		}
+
+		return $slug;
+	}
+
+	/**
+	 * BC slot-shaped array for legacy filters (`ad_placr_in_content_slot_should_display`, breakpoint).
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array<string, mixed> $targeting    Placement targeting blob.
+	 * @param string               $dom_slug     Sanitized slug used in `id` / DOM id.
+	 * @param int                  $paragraph    Clamped 1-based paragraph index.
+	 * @param string               $before_after `before` or `after`.
+	 * @return array<string, mixed>
+	 */
+	private static function build_slot_shaped_array( array $targeting, string $dom_slug, int $paragraph, string $before_after ): array {
+		$post_types = isset( $targeting['post_types'] ) && is_array( $targeting['post_types'] )
+			? $targeting['post_types']
+			: array();
+
+		return array(
+			'id'              => $dom_slug,
+			'paragraph_index' => $paragraph,
+			'position'        => $before_after,
+			'post_types'      => $post_types,
+		);
+	}
+
+	/**
+	 * Build concatenated per-placement mobile override CSS (scoped by wrapper id).
+	 *
+	 * Only placements that list an ad with mobile override code need media queries.
+	 * CSS is scoped to `#ad-placr-ic-{slug}` so breakpoints never leak across slots.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array<int, array<string, mixed>> $placements Displayable placement rows.
+	 * @return string
+	 */
+	private static function collect_inline_css_for_placements( array $placements ): string {
+		$css = '';
+
+		foreach ( $placements as $row ) {
+			$placement_id = (int) $row['placement_id'];
+			if ( ! self::placement_needs_mobile_css( $placement_id ) ) {
+				continue;
+			}
+
+			$slot       = $row['slot'];
+			$dom_id     = 'ad-placr-ic-' . (string) $row['dom_slug'];
+			$breakpoint = self::resolve_mobile_breakpoint( is_array( $slot ) ? $slot : array() );
+
+			$css .= Ad_Placr_Renderer::build_mobile_pair_css( '#' . $dom_id, $breakpoint );
+		}
+
+		return $css;
+	}
+
+	/**
+	 * Whether any weighted ad on the placement has non-empty mobile code.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $placement_id Placement post ID.
+	 * @return bool
+	 */
+	private static function placement_needs_mobile_css( int $placement_id ): bool {
+		$ads = Ad_Placr_Placement::get_ads( $placement_id );
+
+		foreach ( $ads as $ad_row ) {
+			$ad_id = (int) $ad_row['ad_id'];
+			if ( $ad_id <= 0 ) {
+				continue;
+			}
+			if ( '' !== trim( Ad_Placr_Ad::get_mobile_code( $ad_id ) ) ) {
 				return true;
 			}
 		}
@@ -84,143 +253,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * All slots from settings (after migration).
-	 *
-	 * @since 1.1.0
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private static function get_slots(): array {
-		$settings = Ad_Placr_Plugin::get_settings();
-		$slots    = isset( $settings['in_content_slots'] ) && is_array( $settings['in_content_slots'] ) ? $settings['in_content_slots'] : array();
-
-		return $slots;
-	}
-
-	/**
-	 * Slots that are enabled, have code, and match current post type.
-	 *
-	 * @since 1.1.0
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private static function get_active_slots_for_request(): array {
-		$out = array();
-
-		foreach ( self::get_slots() as $slot ) {
-			if ( ! self::slot_has_output( $slot ) ) {
-				continue;
-			}
-
-			if ( ! self::slot_matches_post_type( $slot ) ) {
-				continue;
-			}
-
-			$out[] = $slot;
-		}
-
-		return $out;
-	}
-
-	/**
-	 * Whether a slot is enabled and has at least one non-empty ad snippet.
-	 *
-	 * @since 1.1.0
-	 *
-	 * @param array<string, mixed> $slot Slot config.
-	 * @return bool
-	 */
-	private static function slot_has_output( array $slot ): bool {
-		if ( empty( $slot['enabled'] ) ) {
-			return false;
-		}
-
-		$c = isset( $slot['code'] ) ? trim( (string) $slot['code'] ) : '';
-		$m = isset( $slot['mobile_code'] ) ? trim( (string) $slot['mobile_code'] ) : '';
-
-		return '' !== $c || '' !== $m;
-	}
-
-	/**
-	 * Whether the slot’s allowed post types include the current singular post type.
-	 *
-	 * Empty `post_types` means “match nothing” — admins must opt in per type.
-	 *
-	 * @since 1.1.0
-	 *
-	 * @param array<string, mixed> $slot Slot config.
-	 * @return bool
-	 */
-	private static function slot_matches_post_type( array $slot ): bool {
-		$pt = get_post_type();
-		if ( ! is_string( $pt ) ) {
-			return false;
-		}
-
-		$types = isset( $slot['post_types'] ) && is_array( $slot['post_types'] ) ? $slot['post_types'] : array();
-
-		return in_array( $pt, $types, true );
-	}
-
-	/**
-	 * Build concatenated per-slot mobile override CSS (scoped by wrapper id).
-	 *
-	 * Only slots with *both* universal and mobile code need media queries. CSS is
-	 * scoped to `#ad-placr-ic-{id}` so breakpoints never leak across slots.
-	 *
-	 * @since 1.1.0
-	 *
-	 * @param array<int, array<string, mixed>> $slots Active slots.
-	 * @return string
-	 */
-	private static function collect_inline_css_for_slots( array $slots ): string {
-		$css = '';
-
-		foreach ( $slots as $slot ) {
-			$univ   = isset( $slot['code'] ) ? trim( (string) $slot['code'] ) : '';
-			$mobile = isset( $slot['mobile_code'] ) ? trim( (string) $slot['mobile_code'] ) : '';
-			if ( '' === $mobile || '' === $univ ) {
-				continue;
-			}
-
-			$sid        = self::slot_dom_id( $slot );
-			$breakpoint = self::resolve_mobile_breakpoint( $slot );
-			$bp         = (int) $breakpoint;
-
-			$css .= sprintf(
-				'@media screen and (max-width: %1$dpx){#%4$s .ad-placr__slot--universal{display:none !important;}#%4$s .ad-placr__slot--mobile{%2$s}}' .
-				'@media screen and (min-width: %3$dpx){#%4$s .ad-placr__slot--universal{%2$s}#%4$s .ad-placr__slot--mobile{display:none !important;}}',
-				$bp,
-				self::SLOT_VISIBLE_INLINE,
-				$bp + 1,
-				$sid
-			);
-		}
-
-		return $css;
-	}
-
-	/**
-	 * HTML-safe id for the outer wrapper.
-	 *
-	 * @since 1.1.0
-	 *
-	 * @param array<string, mixed> $slot Slot config.
-	 * @return string
-	 */
-	private static function slot_dom_id( array $slot ): string {
-		$id = isset( $slot['id'] ) ? (string) $slot['id'] : '';
-		$id = preg_replace( '/[^a-zA-Z0-9_\-]/', '', $id );
-
-		if ( '' === $id ) {
-			$id = 'ic_auto';
-		}
-
-		return 'ad-placr-ic-' . $id;
-	}
-
-	/**
-	 * Insert all applicable slots into post content.
+	 * Insert all applicable CPT placements into post content.
 	 *
 	 * Guards: main loop only (avoids widgets / secondary queries), no feeds, singular
 	 * views only. Global + per-slot filters can short-circuit without touching HTML.
@@ -257,31 +290,33 @@ final class Ad_Placr_In_Content {
 			return $content;
 		}
 
-		$slots = self::get_active_slots_for_request();
+		$placements = self::get_displayable_placements();
 
-		if ( empty( $slots ) ) {
+		if ( empty( $placements ) ) {
 			return $content;
 		}
 
 		$post_id = get_the_ID();
 
 		/*
-		 * Bucket slot HTML by paragraph index first, then inject once.
-		 * Re-walking the content per slot would renumber paragraphs after each insert
-		 * and break “after paragraph 3” when another slot already inserted above it.
+		 * Bucket placement HTML by paragraph index first, then inject once.
+		 * Re-walking the content per placement would renumber paragraphs after each
+		 * insert and break “after paragraph 3” when another slot already inserted above it.
 		 */
 		$before_by_para = array();
 		$after_by_para  = array();
 
-		foreach ( $slots as $slot ) {
+		foreach ( $placements as $row ) {
+			$slot = $row['slot'];
+
 			/**
 			 * Filter whether this in-content slot should output for the current post.
 			 *
 			 * @since 1.1.0
 			 *
-			 * @param bool  $show    Whether to show this slot.
-			 * @param array $slot    Slot configuration.
-			 * @param int   $post_id Current post ID.
+			 * @param bool                 $show    Whether to show this slot.
+			 * @param array<string, mixed> $slot    Slot-shaped configuration (BC).
+			 * @param int                  $post_id Current post ID.
 			 */
 			$show = apply_filters( 'ad_placr_in_content_slot_should_display', true, $slot, $post_id );
 
@@ -289,14 +324,25 @@ final class Ad_Placr_In_Content {
 				continue;
 			}
 
-			$html = self::build_wrapper_html( $slot );
+			$breakpoint = self::resolve_mobile_breakpoint( $slot );
+			$dom_id     = 'ad-placr-ic-' . (string) $row['dom_slug'];
+
+			$html = Ad_Placr_Renderer::render_placement(
+				(int) $row['placement_id'],
+				array(
+					'dom_id'         => $dom_id,
+					'modifier_class' => 'ad-placr--in-content',
+					'breakpoint'     => $breakpoint,
+					'echo'           => false,
+				)
+			);
 
 			if ( '' === $html ) {
 				continue;
 			}
 
-			$n = isset( $slot['paragraph_index'] ) ? max( 1, min( 100, absint( $slot['paragraph_index'] ) ) ) : 1;
-			$p = isset( $slot['position'] ) && 'before' === $slot['position'] ? 'before' : 'after';
+			$n = (int) $slot['paragraph_index'];
+			$p = (string) $row['position'];
 
 			if ( 'before' === $p ) {
 				if ( ! isset( $before_by_para[ $n ] ) ) {
@@ -369,53 +415,11 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Build outer HTML for one slot.
-	 *
-	 * @since 0.1.6
-	 *
-	 * @param array<string, mixed> $slot Slot configuration.
-	 * @return string
-	 */
-	private static function build_wrapper_html( array $slot ): string {
-		$code                = isset( $slot['code'] ) ? (string) $slot['code'] : '';
-		$mobile_code         = isset( $slot['mobile_code'] ) ? (string) $slot['mobile_code'] : '';
-		$has_mobile_override = '' !== trim( $mobile_code );
-		$has_universal       = '' !== trim( $code );
-		$breakpoint          = self::resolve_mobile_breakpoint( $slot );
-		$dom_id              = self::slot_dom_id( $slot );
-
-		ob_start();
-
-		echo '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ad-placr--in-content" data-mobile-max="' . esc_attr( (string) $breakpoint ) . '">';
-
-		if ( $has_mobile_override && $has_universal ) {
-			echo '<div class="ad-placr__slot ad-placr__slot--universal">';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network HTML/scripts; stored by privileged users.
-			echo $code;
-			echo '</div>';
-			echo '<div class="ad-placr__slot ad-placr__slot--mobile">';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo $mobile_code;
-			echo '</div>';
-		} else {
-			$out_code = $has_universal ? $code : $mobile_code;
-			echo '<div class="ad-placr__slot ad-placr__slot--all">';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo $out_code;
-			echo '</div>';
-		}
-
-		echo '</div>';
-
-		return (string) ob_get_clean();
-	}
-
-	/**
 	 * Resolve mobile breakpoint (782px default).
 	 *
 	 * @since 0.1.6
 	 *
-	 * @param array<string, mixed> $slot Slot configuration.
+	 * @param array<string, mixed> $slot Slot-shaped configuration (BC for the filter).
 	 * @return int
 	 */
 	private static function resolve_mobile_breakpoint( array $slot ): int {
@@ -426,8 +430,8 @@ final class Ad_Placr_In_Content {
 		 *
 		 * @since 0.1.6
 		 *
-		 * @param int   $default Default breakpoint (782).
-		 * @param array $slot    Slot configuration.
+		 * @param int                  $default Default breakpoint (782).
+		 * @param array<string, mixed> $slot    Slot-shaped configuration (BC).
 		 */
 		$breakpoint = (int) apply_filters( 'ad_placr_in_content_mobile_breakpoint', $default, $slot );
 
