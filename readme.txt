@@ -1,26 +1,38 @@
 === Ad Placr ===
 Contributors: kraftysprouts
-Tags: ads, advertising, footer, sticky
+Tags: ads, advertising, footer, sticky, content
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 0.1.5
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Flexible ad placements for WordPress — starting with a floating footer sticky slot.
+Flexible ad placements for WordPress: footer sticky and multiple in-content paragraph slots.
 
 == Description ==
 
-Ad Placr helps you place ad code in consistent, theme-agnostic locations. Version 0.1.0 includes a footer sticky placement with optional separate mobile ad code and a configurable breakpoint.
+Ad Placr helps you place ad code in consistent locations: a floating footer sticky and **multiple** in-content placements (before or after numbered paragraphs on posts/pages), each with optional mobile-specific code. Settings support add/remove slots from one screen.
 
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** screen.
-3. Go to **Settings → Ad Placr** to configure the footer sticky placement.
+3. Go to **Settings → Ad Placr** to configure placements.
 
 == Changelog ==
+
+= 1.2.0 =
+* Foundations: position registry, Ad/Placement CPTs, legacy settings migration, in-content package files. See changelog.md.
+
+= 1.1.1 =
+* Removed legacy `in_content` auto-migration and a mistakenly nested unrelated plugin folder. Product-neutral docs only. See changelog.md.
+
+= 1.1.0 =
+* Multiple in-content slots (repeater UI), paragraph block walk, per-slot IDs and filters. See changelog.md for filter changes.
+
+= 0.1.6 =
+* In-content placement: paragraph number, before/after, posts/pages, optional mobile override.
 
 = 0.1.5 =
 * Footer sticky: flexbox centering for display ad blocks and iframes.

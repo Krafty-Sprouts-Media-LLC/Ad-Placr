@@ -1,0 +1,45 @@
+/**
+ * In-content placement — layout (not fixed; flows with post body).
+ *
+ * @package AdPlacr
+ * @since 0.1.6
+ */
+
+.ad-placr.ad-placr--in-content {
+	margin: 1.25em auto;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	clear: both;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.ad-placr.ad-placr--in-content .ad-placr__slot {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	max-width: 100%;
+	margin: 0 auto;
+	box-sizing: border-box;
+}
+
+.ad-placr.ad-placr--in-content .ad-placr__slot > div,
+.ad-placr.ad-placr--in-content .ad-placr__slot iframe,
+.ad-placr.ad-placr--in-content .ad-placr__slot ins {
+	margin-left: auto;
+	margin-right: auto;
+	max-width: 100%;
+}
+
+.ad-placr.ad-placr--in-content .ad-placr__slot--mobile {
+	display: none;
+}
+
+.ad-placr.ad-placr--in-content .ad-placr__slot--universal {
+	display: flex;
+}

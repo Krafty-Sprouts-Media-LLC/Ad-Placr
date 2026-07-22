@@ -4,6 +4,67 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 22/07/2026
+
+### Added
+
+- **Dev tooling** — Composer scripts for PHPCS, PHPStan, and PHPUnit (`composer test` / lint / analyse).
+- **Canonical position registry** (`Ad_Placr_Positions`) — filterable taxonomy keys for all placement positions.
+- **Ad CPT** (`ad_placr_ad`) — reusable creative posts with code / mobile code / status meta.
+- **Placement CPT** (`ad_placr_placement`) — position + targeting + weighted ad list (rotation-ready).
+- **One-time migration** (`Ad_Placr_Migration`) — converts legacy `ad_placr_settings` (footer sticky + in-content slots) into Ad + Placement posts; DB version bumps only when migration succeeds (or when there is nothing to migrate).
+- **In-content placement files** shipped with the package (`class-ad-placr-in-content.php`, front-end CSS, settings repeater assets) so clean checkouts load and the 1.1+ settings UI works.
+
+### Changed
+
+- Version bump to **1.2.0** (`ad-placr.php`, `readme.txt` Stable tag).
+
+## [1.1.2] - 22/07/2026
+
+### Added
+
+- **AGENTS.md §4.1–4.2** — WordPress file headers, DocBlock tags (`@package AdPlacr`, `@since`, `@param`, `@return`, `@var`), hook docs, and inline-comment rules that explain non-obvious “why”.
+- **Explanatory comments** across bootstrap, settings sanitization, footer sticky dual-slot output, and in-content paragraph injection so the control flow is readable without reverse-engineering.
+
+### Changed
+
+- Version bump to **1.1.2** (`ad-placr.php`, `readme.txt` Stable tag).
+
+## [1.1.1] - 03/04/2026
+
+### Removed
+
+- **Legacy `in_content` migration** in `Ad_Placr_Plugin::get_settings()` — the plugin is still in active development; settings use `in_content_slots` only.
+- **Nested foreign plugin directory** — unrelated product tree that had been committed inside this folder by mistake.
+
+### Changed
+
+- **Copy and docs:** neutral wording only (no third-party product names in Ad Placr readme, settings blurbs, or dev notes).
+
+## [1.1.0] - 03/04/2026
+
+### Added
+
+- **Multiple in-content placements:** repeatable slots (up to 30) with per-slot label, enable, post types, paragraph number, before/after, universal + optional mobile code, stable `id` for wrapper/CSS scoping (paragraph-index targeting on rendered content).
+- **Admin repeater:** Add / Remove slot UI with `admin/js/in-content-slots.js` and `admin/css/settings-slots.css`.
+- **`Ad_Placr_Plugin::get_settings()`** — merged options plus automatic migration from the legacy single `in_content` object (pre-1.1.0) into `in_content_slots` until settings are saved.
+- **`roadmap.md`** — future ideas (shortcodes, CPTs, conditions, header/AMP, etc.).
+
+### Changed
+
+- In-content injection uses **`<p>…</p>` block splitting** in one pass so several slots can target the same or different paragraphs.
+- Per-slot responsive CSS is scoped to **`#ad-placr-ic-{id}`** when both universal and mobile code exist.
+
+### Removed
+
+- **Breaking:** the filter `ad_placr_in_content_should_display` (single config) is replaced by **`ad_placr_in_content_should_inject`** (global) and **`ad_placr_in_content_slot_should_display`** (per slot, receives `$post_id`).
+
+## [0.1.6] - 03/04/2026
+
+### Added
+
+- **In-content** placement: insert universal (and optional mobile) ad code **before** or **after** a numbered HTML paragraph on singular posts/pages (settings: paragraph index 1–100, post type checkboxes). Runs on `the_content` at priority 12. Filters: `ad_placr_in_content_should_display`, `ad_placr_in_content_mobile_breakpoint`.
+
 ## [0.1.5] - 03/04/2026
 
 ### Fixed
@@ -46,6 +107,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `development.md` with local setup notes.
 - Uninstall handler to remove stored options.
 
+[1.2.0]: https://github.com/kraftysprouts/ad-placr/compare/1.1.2...1.2.0
+[1.1.2]: https://github.com/kraftysprouts/ad-placr/compare/1.1.1...1.1.2
+[1.1.1]: https://github.com/kraftysprouts/ad-placr/compare/1.1.0...1.1.1
+[1.1.0]: https://github.com/kraftysprouts/ad-placr/compare/0.1.6...1.1.0
+[0.1.6]: https://github.com/kraftysprouts/ad-placr/compare/0.1.5...0.1.6
 [0.1.5]: https://github.com/kraftysprouts/ad-placr/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/kraftysprouts/ad-placr/compare/0.1.3...0.1.4
 [0.1.3]: https://github.com/kraftysprouts/ad-placr/compare/0.1.2...0.1.3

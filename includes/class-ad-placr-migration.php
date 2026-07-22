@@ -34,6 +34,9 @@ final class Ad_Placr_Migration {
 	/**
 	 * Run migration once when the stored DB version is behind.
 	 *
+	 * Bumps `ad_placr_db_version` only when `run()` succeeds. Failed inserts leave
+	 * the option unchanged so a later request can retry (version-only idempotency).
+	 *
 	 * @since 2.0.0
 	 *
 	 * @return void
@@ -45,23 +48,35 @@ final class Ad_Placr_Migration {
 			return;
 		}
 
-		self::run();
-
-		update_option( self::OPTION_DB_VERSION, self::DB_VERSION, false );
+		if ( self::run() ) {
+			update_option( self::OPTION_DB_VERSION, self::DB_VERSION, false );
+		}
 	}
 
 	/**
 	 * Persist the built definitions as Ad + Placement posts.
 	 *
+	 * Success rules: if `build_definitions` yields N ads/placements, every insert
+	 * must succeed; if N=0 (nothing to migrate), returns true so the version still bumps.
+	 *
 	 * @since 2.0.0
 	 *
-	 * @return void
+	 * @return bool True when migration completed (or had nothing to do); false if any required insert failed.
 	 */
-	public static function run(): void {
+	public static function run(): bool {
 		$settings = Ad_Placr_Plugin::get_settings();
 		$defs     = self::build_definitions( $settings );
 
-		$ad_ids = array();
+		$expected_ads        = count( $defs['ads'] );
+		$expected_placements = count( $defs['placements'] );
+
+		// Nothing to migrate still counts as success so the DB version advances.
+		if ( 0 === $expected_ads && 0 === $expected_placements ) {
+			return true;
+		}
+
+		$ad_ids             = array();
+		$placements_created = 0;
 
 		foreach ( $defs['ads'] as $ad ) {
 			$post_id = wp_insert_post(
@@ -74,7 +89,7 @@ final class Ad_Placr_Migration {
 			);
 
 			if ( is_wp_error( $post_id ) ) {
-				continue;
+				return false;
 			}
 
 			update_post_meta( $post_id, Ad_Placr_Ad::META_CODE, $ad['code'] );
@@ -86,7 +101,7 @@ final class Ad_Placr_Migration {
 
 		foreach ( $defs['placements'] as $placement ) {
 			if ( ! isset( $ad_ids[ $placement['ad_key'] ] ) ) {
-				continue;
+				return false;
 			}
 
 			$post_id = wp_insert_post(
@@ -99,7 +114,7 @@ final class Ad_Placr_Migration {
 			);
 
 			if ( is_wp_error( $post_id ) ) {
-				continue;
+				return false;
 			}
 
 			update_post_meta( $post_id, Ad_Placr_Placement::META_POSITION, $placement['position'] );
@@ -125,7 +140,11 @@ final class Ad_Placr_Migration {
 					),
 				)
 			);
+
+			++$placements_created;
 		}
+
+		return count( $ad_ids ) === $expected_ads && $placements_created === $expected_placements;
 	}
 
 	/**
