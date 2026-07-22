@@ -156,11 +156,12 @@ start a phase's code before its brainstorm/plan/TDD skills are invoked (see `AGE
   analytics writes nothing to our storage; every scheduled hook has a registered callback; no PII in
   URLs or logs; retention actually prunes.
 
-### Phase 7 — Admin polish, REST, docs
-- CPT list-table columns (position, status, impressions), settings screen for global defaults,
-  optional REST/abilities for AI clients.
-- Update `readme.txt`, `changelog.md`, `development.md`; retire `/adsly` from the tree once parity
-  is confirmed.
+### Phase 7 — Admin polish & docs (**shipped 2.6.0**)
+- CPT edit meta boxes (Ad code/status; Placement position/status/ads/targeting) + list-table
+  columns (position, status, ads count, impressions/clicks).
+- Docs: `readme.md`, refreshed `readme.txt` / `development.md` / `changelog.md`.
+- **Deferred (roadmap):** admin REST/abilities for AI clients; retiring `/adsly` from the local
+  tree once parity is confirmed.
 
 ---
 

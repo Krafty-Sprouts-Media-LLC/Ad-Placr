@@ -4,6 +4,20 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 22/07/2026
+
+### Added
+
+- **Ad edit meta box** — universal/mobile code + status (`Ad_Placr_Admin`).
+- **Placement edit meta boxes** — position picker, status, paragraph index, weighted ads repeater (plus existing Targeting).
+- **List-table columns** — Ads: status, impressions, clicks. Placements: position, status, ads count, impressions, clicks.
+- **`Ad_Placr_Analytics::count_events()` / `format_stat_cell()`** — totals for admin columns (`—` when storage off).
+- **`readme.md`** — GitHub-oriented product overview.
+
+### Changed
+
+- Version bump to **2.6.0**; `readme.txt` rewritten for the Ad ↔ Placement model; `development.md` notes admin UI.
+
 ## [2.5.0] - 22/07/2026
 
 ### Added

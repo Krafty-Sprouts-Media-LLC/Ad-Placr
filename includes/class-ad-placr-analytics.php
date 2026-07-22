@@ -164,6 +164,78 @@ final class Ad_Placr_Analytics {
 	}
 
 	/**
+	 * Format a list-table stats cell.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param int  $count            Event count.
+	 * @param bool $storage_enabled  Whether first-party storage is on.
+	 * @return string Count as string, or em dash when storage is off.
+	 */
+	public static function format_stat_cell( int $count, bool $storage_enabled ): string {
+		if ( ! $storage_enabled ) {
+			return '—';
+		}
+
+		return (string) max( 0, $count );
+	}
+
+	/**
+	 * Count stored events, optionally filtered by type / ad / placement.
+	 *
+	 * Returns 0 when the table is missing or storage has never been installed.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string|null $event_type   impression|click|null (all).
+	 * @param int         $ad_id        Ad ID filter (0 = any).
+	 * @param int         $placement_id Placement ID filter (0 = any).
+	 * @return int
+	 */
+	public static function count_events( ?string $event_type = null, int $ad_id = 0, int $placement_id = 0 ): int {
+		global $wpdb;
+
+		if ( (int) get_option( self::OPTION_SCHEMA_VERSION, 0 ) < 1 ) {
+			return 0;
+		}
+
+		$table = self::table_name();
+		$where = array( '1=1' );
+		$args  = array();
+
+		if ( null !== $event_type ) {
+			$type = self::normalize_event_type( $event_type );
+			if ( null === $type ) {
+				return 0;
+			}
+			$where[] = 'event_type = %s';
+			$args[]  = $type;
+		}
+
+		if ( $ad_id > 0 ) {
+			$where[] = 'ad_id = %d';
+			$args[]  = $ad_id;
+		}
+
+		if ( $placement_id > 0 ) {
+			$where[] = 'placement_id = %d';
+			$args[]  = $placement_id;
+		}
+
+		$sql = 'SELECT COUNT(*) FROM {table} WHERE ' . implode( ' AND ', $where );
+		$sql = str_replace( '{table}', $table, $sql );
+
+		if ( ! empty( $args ) ) {
+			$sql = $wpdb->prepare( $sql, $args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Placeholders built above.
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Aggregates from analytics table.
+		$count = $wpdb->get_var( $sql );
+
+		return absint( $count );
+	}
+
+	/**
 	 * Record an event: always fire the action; optionally insert a row.
 	 *
 	 * @since 2.5.0

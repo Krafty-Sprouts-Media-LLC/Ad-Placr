@@ -262,7 +262,7 @@ final class Ad_Placr_Settings_Page {
 	 * @param string $code Raw code from the textarea.
 	 * @return string
 	 */
-	private static function sanitize_ad_code( string $code ): string {
+	public static function sanitize_ad_code( string $code ): string {
 		$code = wp_unslash( $code );
 
 		if ( current_user_can( 'unfiltered_html' ) ) {

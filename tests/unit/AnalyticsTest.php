@@ -35,4 +35,10 @@ final class AnalyticsTest extends TestCase {
 	public function test_cron_hook_constant(): void {
 		$this->assertSame( 'ad_placr_analytics_cleanup', Ad_Placr_Analytics::CRON_HOOK );
 	}
+
+	public function test_format_stat_cell(): void {
+		$this->assertSame( '—', Ad_Placr_Analytics::format_stat_cell( 12, false ) );
+		$this->assertSame( '12', Ad_Placr_Analytics::format_stat_cell( 12, true ) );
+		$this->assertSame( '0', Ad_Placr_Analytics::format_stat_cell( 0, true ) );
+	}
 }

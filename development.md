@@ -20,6 +20,7 @@
 - **Widget:** Appearance → Widgets → **Ad Placr** (`includes/class-ad-placr-widget.php`) — select a Placement; optional sticky uses `assets/css/widget.css`.
 - **Targeting:** `includes/class-ad-placr-targeting.php` — `should_display()` / `matches()`; Placement meta box in `includes/class-ad-placr-admin.php`. Empty rules fail open; no UA device gate.
 - **Analytics:** `includes/class-ad-placr-analytics.php` + `class-ad-placr-rest.php` + `assets/js/tracking.js`. Setting `analytics_enabled` gates first-party rows; hooks always fire. Table `{prefix}ad_placr_events`, cron `ad_placr_analytics_cleanup` (90 days).
+- **Admin:** `includes/class-ad-placr-admin.php` — Ad/Placement meta boxes (creative, details, weighted ads, targeting) and list-table columns. Capability `manage_options`.
 
 ## Roadmap
 
