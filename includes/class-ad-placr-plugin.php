@@ -134,6 +134,7 @@ final class Ad_Placr_Plugin {
 				'mobile_code' => '',
 			),
 			'in_content_slots' => array(),
+			'disclosure_text'  => '',
 		);
 	}
 

@@ -237,4 +237,87 @@ final class Ad_Placr_Placement {
 
 		return in_array( $post_type, $types, true );
 	}
+
+	/**
+	 * Whether a placement is published and marked active.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $placement_id Placement post ID.
+	 * @return bool
+	 */
+	public static function is_active( int $placement_id ): bool {
+		if ( self::POST_TYPE !== get_post_type( $placement_id ) ) {
+			return false;
+		}
+
+		if ( 'publish' !== get_post_status( $placement_id ) ) {
+			return false;
+		}
+
+		return 'active' === self::normalize_status( get_post_meta( $placement_id, self::META_STATUS, true ) );
+	}
+
+	/**
+	 * Canonical position key for a placement.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $id Placement post ID.
+	 * @return string Position key, or empty string when unset.
+	 */
+	public static function get_position( int $id ): string {
+		return (string) get_post_meta( $id, self::META_POSITION, true );
+	}
+
+	/**
+	 * Targeting blob for a placement.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int $id Placement post ID.
+	 * @return array<string, mixed>
+	 */
+	public static function get_targeting( int $id ): array {
+		$raw = get_post_meta( $id, self::META_TARGETING, true );
+
+		return is_array( $raw ) ? $raw : array();
+	}
+
+	/**
+	 * Published placement IDs assigned to a canonical position key.
+	 *
+	 * Thin `get_posts` wrapper — no status/active filter here; callers use
+	 * `is_active()` (and targeting) after this query.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $position_key Canonical position taxonomy key.
+	 * @return int[]
+	 */
+	public static function query_ids_for_position( string $position_key ): array {
+		$ids = get_posts(
+			array(
+				'post_type'              => self::POST_TYPE,
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => true,
+				'update_post_term_cache' => false,
+				'meta_query'             => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Position lookup by design.
+					array(
+						'key'   => self::META_POSITION,
+						'value' => $position_key,
+					),
+				),
+			)
+		);
+
+		if ( ! is_array( $ids ) ) {
+			return array();
+		}
+
+		return array_map( 'intval', $ids );
+	}
 }

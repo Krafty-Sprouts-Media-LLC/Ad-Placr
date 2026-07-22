@@ -151,4 +151,70 @@ final class Ad_Placr_Renderer {
 
 		return $breakpoint;
 	}
+
+	/**
+	 * Pick a weighted active ad for a placement and build wrapper HTML.
+	 *
+	 * Returns an empty string when the placement/ad is inactive or both codes
+	 * are blank. `$args` keys: `dom_id`, `modifier_class`, `breakpoint` (int),
+	 * optional `echo` (bool, default false) for optional output.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int                  $placement_id Placement post ID.
+	 * @param array<string, mixed> $args         Wrapper args (see summary).
+	 * @return string Wrapper HTML, or empty string when nothing should render.
+	 */
+	public static function render_placement( int $placement_id, array $args ): string {
+		if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
+			return '';
+		}
+
+		$ads = Ad_Placr_Placement::get_ads( $placement_id );
+		if ( empty( $ads ) ) {
+			return '';
+		}
+
+		/*
+		 * Weighted pick uses a full-range roll; choose_weighted reduces it modulo
+		 * the weight sum so any non-negative int is a valid band selector.
+		 */
+		$roll  = function_exists( 'wp_rand' ) ? wp_rand( 0, PHP_INT_MAX ) : random_int( 0, PHP_INT_MAX );
+		$ad_id = Ad_Placr_Placement::choose_weighted( $ads, $roll );
+
+		if ( null === $ad_id || ! Ad_Placr_Ad::is_active( $ad_id ) ) {
+			return '';
+		}
+
+		$code        = Ad_Placr_Ad::get_code( $ad_id );
+		$mobile_code = Ad_Placr_Ad::get_mobile_code( $ad_id );
+
+		if ( '' === trim( $code ) && '' === trim( $mobile_code ) ) {
+			return '';
+		}
+
+		$settings   = Ad_Placr_Plugin::get_settings();
+		$disclosure = isset( $settings['disclosure_text'] ) ? trim( (string) $settings['disclosure_text'] ) : '';
+
+		$dom_id         = isset( $args['dom_id'] ) ? (string) $args['dom_id'] : '';
+		$modifier_class = isset( $args['modifier_class'] ) ? (string) $args['modifier_class'] : '';
+		$breakpoint     = isset( $args['breakpoint'] ) ? (int) $args['breakpoint'] : 782;
+		$do_echo        = ! empty( $args['echo'] );
+
+		$html = self::build_wrapper_html(
+			$dom_id,
+			$modifier_class,
+			$breakpoint,
+			$code,
+			$mobile_code,
+			$disclosure
+		);
+
+		if ( $do_echo ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network code; stored by privileged users.
+			echo $html;
+		}
+
+		return $html;
+	}
 }
