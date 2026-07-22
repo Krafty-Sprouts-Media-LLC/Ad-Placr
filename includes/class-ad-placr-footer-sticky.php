@@ -85,49 +85,16 @@ final class Ad_Placr_Footer_Sticky {
 	 */
 	private static function get_displayable_placement_ids(): array {
 		$ids = Ad_Placr_Placement::query_ids_for_position( Ad_Placr_Positions::STICKY_FOOTER );
+		$ctx = Ad_Placr_Targeting::build_request_context();
 		$out = array();
 
 		foreach ( $ids as $placement_id ) {
-			if ( self::placement_should_display( $placement_id ) ) {
+			if ( Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
 				$out[] = $placement_id;
 			}
 		}
 
 		return $out;
-	}
-
-	/**
-	 * Whether a sticky_footer placement may output on the current front request.
-	 *
-	 * `contexts` containing `all` allows any front request. Otherwise require a
-	 * singular view whose post type matches targeting.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int $placement_id Placement post ID.
-	 * @return bool
-	 */
-	private static function placement_should_display( int $placement_id ): bool {
-		if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
-			return false;
-		}
-
-		$targeting = Ad_Placr_Placement::get_targeting( $placement_id );
-		$contexts  = isset( $targeting['contexts'] ) && is_array( $targeting['contexts'] )
-			? $targeting['contexts']
-			: array();
-
-		if ( in_array( 'all', $contexts, true ) ) {
-			return true;
-		}
-
-		if ( ! is_singular() ) {
-			return false;
-		}
-
-		$post_type = get_post_type();
-
-		return is_string( $post_type ) && Ad_Placr_Placement::targeting_matches_singular( $targeting, $post_type );
 	}
 
 	/**

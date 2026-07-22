@@ -95,5 +95,7 @@ require dirname( __DIR__ ) . '/includes/class-ad-placr-placement.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-migration.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-renderer.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-frontend.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-targeting.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-shortcode.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-widget.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-admin.php';

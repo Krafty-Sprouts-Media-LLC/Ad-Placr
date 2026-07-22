@@ -89,11 +89,6 @@ final class Ad_Placr_In_Content {
 	 * }>
 	 */
 	private static function get_displayable_placements(): array {
-		$post_type = get_post_type();
-		if ( ! is_string( $post_type ) ) {
-			return array();
-		}
-
 		$out = array();
 
 		/*
@@ -105,17 +100,15 @@ final class Ad_Placr_In_Content {
 			Ad_Placr_Positions::IN_CONTENT_AFTER_PARAGRAPH => 'after',
 		);
 
+		$ctx = Ad_Placr_Targeting::build_request_context();
+
 		foreach ( $by_position as $position_key => $before_after ) {
 			foreach ( Ad_Placr_Placement::query_ids_for_position( $position_key ) as $placement_id ) {
-				if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
+				if ( ! Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
 					continue;
 				}
 
 				$targeting = Ad_Placr_Placement::get_targeting( $placement_id );
-
-				if ( ! Ad_Placr_Placement::targeting_matches_singular( $targeting, $post_type ) ) {
-					continue;
-				}
 
 				$paragraph = self::clamp_paragraph_index( $targeting );
 				$dom_slug  = self::resolve_dom_slug( $targeting, $placement_id );

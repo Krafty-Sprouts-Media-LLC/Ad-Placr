@@ -18,6 +18,7 @@
 - **In-content:** `includes/class-ad-placr-in-content.php` — `the_content` priority **12**. Multiple slots; each slot has `id`, `enabled`, optional `title`, `paragraph_index`, `position` (`before`/`after`), `post_types`, `code`, `mobile_code`. Injection walks `<p>…</p>` chunks in one pass. Per-slot wrapper id: `ad-placr-ic-{slot_id}` for scoped responsive CSS. Filters: `ad_placr_in_content_should_inject`, `ad_placr_in_content_slot_should_display`, `ad_placr_in_content_mobile_breakpoint`.
 - **Shortcode:** `[ad_placr placement="ID"]` or `[ad_placr ad="ID"]` (`includes/class-ad-placr-shortcode.php`). When both are set, `placement` wins. Output goes through `Ad_Placr_Renderer`.
 - **Widget:** Appearance → Widgets → **Ad Placr** (`includes/class-ad-placr-widget.php`) — select a Placement; optional sticky uses `assets/css/widget.css`.
+- **Targeting:** `includes/class-ad-placr-targeting.php` — `should_display()` / `matches()`; Placement meta box in `includes/class-ad-placr-admin.php`. Empty rules fail open; no UA device gate.
 
 ## Roadmap
 

@@ -4,6 +4,26 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 22/07/2026
+
+### Added
+
+- **`Ad_Placr_Targeting`** — single `should_display()` / pure `matches()` gate for every Placement render path (Frontend, footer sticky, in-content, shortcode, widget).
+- **Rule families** — contexts, post types, logged-in/guest, schedule start/end, URL path needles, category/tag ID allow-lists (AND across families, OR within lists).
+- **Placement Targeting meta box** (`Ad_Placr_Admin`) — minimal native UI; merges into `META_TARGETING` without wiping `paragraph` / `slot_id`.
+- **Filter** `ad_placr_targeting_should_display` — override after core evaluation.
+- Targeting rule-matrix unit tests (`TargetingTest`).
+
+### Changed
+
+- Version bump to **2.4.0** (`ad-placr.php`, `readme.txt` Stable tag).
+- `Ad_Placr_Placement::targeting_matches_singular()` delegates to `Ad_Placr_Targeting::matches()`.
+
+### Notes
+
+- **Fail-open:** empty/missing targeting (or empty `contexts`) shows the placement; explicit deny shapes still hide (e.g. `singular` + empty `post_types`).
+- **No UA device gating** — device presentation remains CSS dual-slot / breakpoint only.
+
 ## [2.3.0] - 22/07/2026
 
 ### Added

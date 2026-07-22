@@ -81,6 +81,11 @@ final class Ad_Placr_Widget extends WP_Widget {
 			return;
 		}
 
+		$ctx = Ad_Placr_Targeting::build_request_context();
+		if ( ! Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
+			return;
+		}
+
 		$modifier = trim( 'ad-placr--sidebar-widget ' . self::sticky_modifier( $sticky ) );
 
 		$html = Ad_Placr_Renderer::render_placement(
@@ -187,7 +192,6 @@ final class Ad_Placr_Widget extends WP_Widget {
 	 * @return WP_Post[]
 	 */
 	private function published_placements(): array {
-		/** @var WP_Post[] $posts */
 		$posts = get_posts(
 			array(
 				'post_type'              => Ad_Placr_Placement::POST_TYPE,
@@ -202,7 +206,14 @@ final class Ad_Placr_Widget extends WP_Widget {
 			)
 		);
 
-		return $posts;
+		$out = array();
+		foreach ( $posts as $post ) {
+			if ( $post instanceof WP_Post ) {
+				$out[] = $post;
+			}
+		}
+
+		return $out;
 	}
 
 	/**

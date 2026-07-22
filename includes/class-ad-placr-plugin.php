@@ -88,6 +88,7 @@ final class Ad_Placr_Plugin {
 		Ad_Placr_Frontend::register();
 		Ad_Placr_Shortcode::register();
 		Ad_Placr_Widget::register();
+		Ad_Placr_Admin::register();
 		Ad_Placr_Ad::register();
 		Ad_Placr_Placement::register();
 		Ad_Placr_Migration::register();

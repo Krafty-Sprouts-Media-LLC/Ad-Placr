@@ -219,23 +219,20 @@ final class Ad_Placr_Placement {
 	 * @return bool
 	 */
 	public static function targeting_matches_singular( array $targeting, string $post_type ): bool {
-		$contexts = isset( $targeting['contexts'] ) && is_array( $targeting['contexts'] )
-			? $targeting['contexts']
-			: array();
-
-		if ( in_array( 'all', $contexts, true ) ) {
-			return true;
-		}
-
-		if ( ! in_array( 'singular', $contexts, true ) ) {
-			return false;
-		}
-
-		$types = isset( $targeting['post_types'] ) && is_array( $targeting['post_types'] )
-			? $targeting['post_types']
-			: array();
-
-		return in_array( $post_type, $types, true );
+		// Delegate to the shared gate (singular-only context) so rules stay one path.
+		return Ad_Placr_Targeting::matches(
+			$targeting,
+			array(
+				'view'         => 'singular',
+				'post_type'    => $post_type,
+				'is_singular'  => true,
+				'user_state'   => 'guest',
+				'url_path'     => '/',
+				'category_ids' => array(),
+				'tag_ids'      => array(),
+				'now'          => 0,
+			)
+		);
 	}
 
 	/**

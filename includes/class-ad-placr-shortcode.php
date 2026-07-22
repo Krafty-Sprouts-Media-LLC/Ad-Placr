@@ -115,6 +115,11 @@ final class Ad_Placr_Shortcode {
 		);
 
 		if ( 'placement' === $type ) {
+			$ctx = Ad_Placr_Targeting::build_request_context();
+			if ( ! Ad_Placr_Targeting::should_display( $id, $ctx ) ) {
+				return '';
+			}
+
 			return Ad_Placr_Renderer::render_placement( $id, $args );
 		}
 
