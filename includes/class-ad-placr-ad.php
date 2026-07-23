@@ -1,6 +1,6 @@
 <?php
 /**
- * Ad creative post type: reusable ad code.
+ * Unified ad post type: complete display records.
  *
  * @package AdPlacr
  * @since 2.0.0
@@ -11,19 +11,81 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Registers the `ad_placr_ad` post type and its meta.
+ * Defines complete Ad display records and their version-selection behavior.
+ *
+ * The class registers the private Ad post type, its unified meta contract, and
+ * validated accessors for the renderers that consume those records.
  *
  * @since 2.0.0
  */
 final class Ad_Placr_Ad {
 
+	/**
+	 * Post type used to store complete ad display records.
+	 *
+	 * @since 2.0.0
+	 */
 	public const POST_TYPE = 'ad_placr_ad';
 
-	public const META_CODE        = '_ad_placr_code';
+	/**
+	 * Display-location meta key.
+	 *
+	 * @since 2.7.0
+	 */
+	public const META_POSITION = '_ad_placr_position';
+
+	/**
+	 * Display-rule meta key.
+	 *
+	 * @since 2.7.0
+	 */
+	public const META_TARGETING = '_ad_placr_targeting';
+
+	/**
+	 * Ordered ad-version meta key.
+	 *
+	 * @since 2.7.0
+	 */
+	public const META_VERSIONS = '_ad_placr_versions';
+
+	/**
+	 * Private administrator notes meta key.
+	 *
+	 * @since 2.0.0
+	 */
+	public const META_NOTES = '_ad_placr_notes';
+
+	/**
+	 * Legacy universal creative meta key retained for the staged migration.
+	 *
+	 * New unified records store creative in {@see self::META_VERSIONS}. This key
+	 * remains registered until Task 8 converts the remaining admin, migration,
+	 * and legacy placement consumers.
+	 *
+	 * @since 2.0.0
+	 */
+	public const META_CODE = '_ad_placr_code';
+
+	/**
+	 * Legacy mobile creative meta key retained for the staged migration.
+	 *
+	 * New unified records store creative in {@see self::META_VERSIONS}. This key
+	 * remains registered until Task 8 converts the remaining admin, migration,
+	 * and legacy placement consumers.
+	 *
+	 * @since 2.0.0
+	 */
 	public const META_MOBILE_CODE = '_ad_placr_mobile_code';
-	public const META_DEVICES     = '_ad_placr_devices';
-	public const META_STATUS      = '_ad_placr_status';
-	public const META_NOTES       = '_ad_placr_notes';
+
+	/**
+	 * Legacy active-status meta key retained for the staged migration.
+	 *
+	 * Published status is authoritative for unified records. This key remains
+	 * registered until Task 8 converts the remaining admin and migration paths.
+	 *
+	 * @since 2.0.0
+	 */
+	public const META_STATUS = '_ad_placr_status';
 
 	/**
 	 * Register hooks.
@@ -52,21 +114,42 @@ final class Ad_Placr_Ad {
 					'singular_name' => __( 'Ad', 'ad-placr' ),
 					'add_new_item'  => __( 'Add New Ad', 'ad-placr' ),
 					'edit_item'     => __( 'Edit Ad', 'ad-placr' ),
-					'menu_name'     => __( 'Ad Placr', 'ad-placr' ),
+					'menu_name'     => __( 'Ads', 'ad-placr' ),
 				),
 				'public'          => false,
 				'show_ui'         => true,
 				'show_in_menu'    => true,
-				'show_in_rest'    => true,
+				'show_in_rest'    => false,
 				'menu_icon'       => 'dashicons-megaphone',
 				'menu_position'   => 26,
 				'supports'        => array( 'title' ),
 				'capability_type' => 'post',
-				'map_meta_cap'    => true,
+				'capabilities'    => array(
+					'edit_post'              => 'manage_options',
+					'read_post'              => 'manage_options',
+					'delete_post'            => 'manage_options',
+					'edit_posts'             => 'manage_options',
+					'edit_others_posts'      => 'manage_options',
+					'publish_posts'          => 'manage_options',
+					'read_private_posts'     => 'manage_options',
+					'delete_posts'           => 'manage_options',
+					'delete_private_posts'   => 'manage_options',
+					'delete_published_posts' => 'manage_options',
+					'delete_others_posts'    => 'manage_options',
+					'edit_private_posts'     => 'manage_options',
+					'edit_published_posts'   => 'manage_options',
+				),
+				'map_meta_cap'    => false,
 			)
 		);
 
-		$string_meta = array( self::META_CODE, self::META_MOBILE_CODE, self::META_STATUS, self::META_NOTES );
+		$string_meta = array(
+			self::META_POSITION,
+			self::META_NOTES,
+			self::META_CODE,
+			self::META_MOBILE_CODE,
+			self::META_STATUS,
+		);
 
 		foreach ( $string_meta as $key ) {
 			register_post_meta(
@@ -83,26 +166,209 @@ final class Ad_Placr_Ad {
 			);
 		}
 
-		register_post_meta(
-			self::POST_TYPE,
-			self::META_DEVICES,
+		$array_meta = array( self::META_TARGETING, self::META_VERSIONS );
+
+		foreach ( $array_meta as $key ) {
+			register_post_meta(
+				self::POST_TYPE,
+				$key,
+				array(
+					'type'          => 'array',
+					'single'        => true,
+					'show_in_rest'  => false,
+					'auth_callback' => static function () {
+						return current_user_can( 'manage_options' );
+					},
+				)
+			);
+		}
+	}
+
+	/**
+	 * Normalize raw version rows into a stable ordered representation.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param mixed $raw Untrusted version rows from post meta.
+	 * @return array<int, array{version_id:string, name:string, code:string, mobile_code:string, weight:int, enabled:bool}>
+	 */
+	public static function normalize_versions( $raw ): array {
+		if ( ! is_array( $raw ) ) {
+			return array();
+		}
+
+		$versions = array();
+		foreach ( $raw as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$version_id = isset( $row['version_id'] ) ? trim( (string) $row['version_id'] ) : '';
+			$version_id = (string) preg_replace( '/[^a-zA-Z0-9_-]/', '', $version_id );
+			if ( '' === $version_id ) {
+				continue;
+			}
+
+			$versions[] = array(
+				'version_id'  => substr( $version_id, 0, 64 ),
+				'name'        => isset( $row['name'] ) ? trim( (string) $row['name'] ) : '',
+				'code'        => isset( $row['code'] ) ? (string) $row['code'] : '',
+				'mobile_code' => isset( $row['mobile_code'] ) ? (string) $row['mobile_code'] : '',
+				'weight'      => max( 1, isset( $row['weight'] ) ? (int) $row['weight'] : 1 ),
+				'enabled'     => ! empty( $row['enabled'] ),
+			);
+		}
+
+		return $versions;
+	}
+
+	/**
+	 * Return enabled versions that include desktop or mobile creative code.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<int, array<string, mixed>> $versions Raw or normalized version rows.
+	 * @return array<int, array{version_id:string, name:string, code:string, mobile_code:string, weight:int, enabled:bool}>
+	 */
+	public static function eligible_versions( array $versions ): array {
+		$eligible = array();
+		foreach ( self::normalize_versions( $versions ) as $version ) {
+			if ( ! $version['enabled'] ) {
+				continue;
+			}
+			if ( '' === trim( $version['code'] ) && '' === trim( $version['mobile_code'] ) ) {
+				continue;
+			}
+			$eligible[] = $version;
+		}
+
+		return $eligible;
+	}
+
+	/**
+	 * Select one eligible version deterministically from a weighted roll.
+	 *
+	 * Normalizing the roll keeps callers free to provide any signed integer while
+	 * preserving a stable weighted distribution over the eligible rows only.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<int, array<string, mixed>> $versions Raw or normalized version rows.
+	 * @param int                              $roll     Deterministic roll value.
+	 * @return array{version_id:string, name:string, code:string, mobile_code:string, weight:int, enabled:bool}|null
+	 */
+	public static function choose_weighted_version( array $versions, int $roll ): ?array {
+		$eligible = self::eligible_versions( $versions );
+		$total    = array_sum( array_column( $eligible, 'weight' ) );
+		if ( $total < 1 ) {
+			return null;
+		}
+
+		$roll   = ( ( $roll % $total ) + $total ) % $total;
+		$cursor = 0;
+		foreach ( $eligible as $version ) {
+			$cursor += $version['weight'];
+			if ( $roll < $cursor ) {
+				return $version;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether an ad record is published and therefore active.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return bool
+	 */
+	public static function is_active( int $ad_id ): bool {
+		return self::POST_TYPE === get_post_type( $ad_id ) && 'publish' === get_post_status( $ad_id );
+	}
+
+	/**
+	 * Get a valid canonical display position for an ad record.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return string Canonical position key, or an empty string when invalid.
+	 */
+	public static function get_position( int $ad_id ): string {
+		$position = (string) get_post_meta( $ad_id, self::META_POSITION, true );
+
+		return Ad_Placr_Positions::exists( $position ) ? $position : '';
+	}
+
+	/**
+	 * Get the display rules stored for an ad record.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return array<string, mixed>
+	 */
+	public static function get_targeting( int $ad_id ): array {
+		$targeting = get_post_meta( $ad_id, self::META_TARGETING, true );
+
+		return is_array( $targeting ) ? $targeting : array();
+	}
+
+	/**
+	 * Get normalized versions stored for an ad record.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int $ad_id Ad post ID.
+	 * @return array<int, array{version_id:string, name:string, code:string, mobile_code:string, weight:int, enabled:bool}>
+	 */
+	public static function get_versions( int $ad_id ): array {
+		return self::normalize_versions( get_post_meta( $ad_id, self::META_VERSIONS, true ) );
+	}
+
+	/**
+	 * Query published ad IDs assigned to one canonical position.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $position Canonical position key.
+	 * @return int[] Ad IDs ordered by menu order, then post ID.
+	 */
+	public static function query_ids_for_position( string $position ): array {
+		if ( ! Ad_Placr_Positions::exists( $position ) ) {
+			return array();
+		}
+
+		return get_posts(
 			array(
-				'type'          => 'array',
-				'single'        => true,
-				'show_in_rest'  => false,
-				'auth_callback' => static function () {
-					return current_user_can( 'manage_options' );
-				},
+				'post_type'      => self::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'orderby'        => array(
+					'menu_order' => 'ASC',
+					'ID'         => 'ASC',
+				),
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Position is the canonical display-location index.
+				'meta_key'       => self::META_POSITION,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Position is validated against the canonical registry above.
+				'meta_value'     => $position,
+				'no_found_rows'  => true,
 			)
 		);
 	}
 
 	/**
-	 * Normalize a raw status value to a known value. Pure.
+	 * Normalize a legacy status value while old admin paths are migrated.
+	 *
+	 * Published post status is authoritative for unified records. Retain this
+	 * transition API until Task 8 removes the remaining legacy meta consumers.
 	 *
 	 * @since 2.0.0
 	 *
-	 * @param mixed $raw Raw status.
+	 * @param mixed $raw Raw legacy status value.
 	 * @return string 'active' or 'inactive'.
 	 */
 	public static function normalize_status( $raw ): string {
@@ -110,27 +376,10 @@ final class Ad_Placr_Ad {
 	}
 
 	/**
-	 * Whether an ad is published and marked active.
+	 * Read legacy universal creative while old renderers are migrated.
 	 *
-	 * @since 2.0.0
-	 *
-	 * @param int $ad_id Ad post ID.
-	 * @return bool
-	 */
-	public static function is_active( int $ad_id ): bool {
-		if ( self::POST_TYPE !== get_post_type( $ad_id ) ) {
-			return false;
-		}
-
-		if ( 'publish' !== get_post_status( $ad_id ) ) {
-			return false;
-		}
-
-		return 'active' === self::normalize_status( get_post_meta( $ad_id, self::META_STATUS, true ) );
-	}
-
-	/**
-	 * Universal ad code for an ad.
+	 * New unified records read creative from {@see self::get_versions()}. Retain
+	 * this transition API until Task 8 removes legacy renderer dependencies.
 	 *
 	 * @since 2.1.0
 	 *
@@ -142,7 +391,10 @@ final class Ad_Placr_Ad {
 	}
 
 	/**
-	 * Mobile override code for an ad.
+	 * Read legacy mobile creative while old renderers are migrated.
+	 *
+	 * New unified records read creative from {@see self::get_versions()}. Retain
+	 * this transition API until Task 8 removes legacy renderer dependencies.
 	 *
 	 * @since 2.1.0
 	 *
