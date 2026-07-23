@@ -9,6 +9,7 @@ Thumbs.db
 
 /vendor/
 /.worktrees/
+/.superpowers/
 
 .phpunit.result.cache
 
