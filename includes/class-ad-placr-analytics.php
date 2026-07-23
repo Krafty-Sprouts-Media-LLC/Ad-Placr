@@ -154,6 +154,22 @@ final class Ad_Placr_Analytics {
 	}
 
 	/**
+	 * Confirm the physical event table has exactly the schema-v2 columns.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param array<int, string> $columns Physical column names.
+	 * @return bool True when the clean Ad/version event shape is present.
+	 */
+	public static function is_event_table_schema_current( array $columns ): bool {
+		$expected = array( 'ad_id', 'created_at', 'event_type', 'id', 'version_id' );
+		$actual   = array_values( array_unique( $columns ) );
+		sort( $actual );
+
+		return $expected === $actual;
+	}
+
+	/**
 	 * GMT datetime string for the retention cutoff.
 	 *
 	 * @since 2.5.0
@@ -408,7 +424,10 @@ final class Ad_Placr_Analytics {
 		 */
 		if ( 1 === $installed ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is trusted prefix plus a class constant.
-			$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+			$dropped = $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+			if ( false === $dropped ) {
+				return;
+			}
 		}
 
 		$sql = "CREATE TABLE {$table} (
@@ -424,6 +443,17 @@ final class Ad_Placr_Analytics {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
+
+		/*
+		 * dbDelta can partially apply a schema and does not remove legacy
+		 * columns. Read the physical shape before recording success so a
+		 * failed or incomplete migration is retried on the next request.
+		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is trusted prefix plus a class constant.
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 );
+		if ( ! self::is_event_table_schema_current( $columns ) ) {
+			return;
+		}
 
 		update_option( self::OPTION_SCHEMA_VERSION, self::SCHEMA_VERSION, false );
 
