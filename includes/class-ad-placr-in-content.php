@@ -1,12 +1,12 @@
 <?php
 /**
- * In-content placements: inject ads before/after numbered paragraphs (HTML <p> blocks).
+ * In-content Ads: inject Ads before/after numbered paragraphs (HTML <p> blocks).
  *
- * Hooks `the_content` at priority 12. Output is driven by active
- * `in_content_before_paragraph` / `in_content_after_paragraph` Placement CPTs via
- * `Ad_Placr_Renderer`. Placements are bucketed into before/after maps keyed by
+ * Hooks `the_content` at priority 12. Output is driven by active unified Ads at
+ * `in_content_before_paragraph` / `in_content_after_paragraph` via
+ * `Ad_Placr_Renderer`. Ads are bucketed into before/after maps keyed by
  * 1-based paragraph index, then injected in one walk over `<p>…</p>` chunks so
- * several placements can target the same paragraph without re-parsing HTML.
+ * several Ads can target the same paragraph without re-parsing HTML.
  *
  * @package AdPlacr
  * @since 0.1.6
@@ -32,7 +32,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Enqueue styles when any displayable in-content placement may render.
+	 * Enqueue styles when any displayable in-content Ad may render.
 	 *
 	 * @since 0.1.6
 	 *
@@ -49,16 +49,10 @@ final class Ad_Placr_In_Content {
 			array(),
 			AD_PLACR_VERSION
 		);
-
-		$inline = self::collect_inline_css_for_placements( self::get_displayable_placements() );
-
-		if ( '' !== $inline ) {
-			wp_add_inline_style( 'ad-placr-in-content', $inline );
-		}
 	}
 
 	/**
-	 * Whether any in-content placement could run on this request (singular + targeting).
+	 * Whether any in-content Ad could run on this request (singular + targeting).
 	 *
 	 * @since 1.1.0
 	 *
@@ -69,26 +63,26 @@ final class Ad_Placr_In_Content {
 			return false;
 		}
 
-		return ! empty( self::get_displayable_placements() );
+		return ! empty( self::get_displayable_ads() );
 	}
 
 	/**
-	 * Active in-content placements that match singular targeting for this request.
+	 * Active in-content Ads that match singular targeting for this request.
 	 *
-	 * Each row carries placement id, before/after position, targeting, a BC slot-shaped
+	 * Each row carries Ad ID, before/after position, targeting, a BC slot-shaped
 	 * array for legacy filters, and a stable DOM slug for wrapper / CSS scoping.
 	 *
 	 * @since 2.1.0
 	 *
 	 * @return array<int, array{
-	 *     placement_id: int,
+	 *     ad_id: int,
 	 *     position: string,
 	 *     targeting: array<string, mixed>,
 	 *     slot: array<string, mixed>,
 	 *     dom_slug: string
 	 * }>
 	 */
-	private static function get_displayable_placements(): array {
+	private static function get_displayable_ads(): array {
 		$out = array();
 
 		/*
@@ -103,23 +97,23 @@ final class Ad_Placr_In_Content {
 		$ctx = Ad_Placr_Targeting::build_request_context();
 
 		foreach ( $by_position as $position_key => $before_after ) {
-			foreach ( Ad_Placr_Placement::query_ids_for_position( $position_key ) as $placement_id ) {
-				if ( ! Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
+			foreach ( Ad_Placr_Ad::query_ids_for_position( $position_key ) as $ad_id ) {
+				if ( ! Ad_Placr_Targeting::should_display( $ad_id, $ctx ) ) {
 					continue;
 				}
 
-				$targeting = Ad_Placr_Placement::get_targeting( $placement_id );
+				$targeting = Ad_Placr_Ad::get_targeting( $ad_id );
 
 				$paragraph = self::clamp_paragraph_index( $targeting );
-				$dom_slug  = self::resolve_dom_slug( $targeting, $placement_id );
+				$dom_slug  = self::resolve_dom_slug( $targeting, $ad_id );
 				$slot      = self::build_slot_shaped_array( $targeting, $dom_slug, $paragraph, $before_after );
 
 				$out[] = array(
-					'placement_id' => $placement_id,
-					'position'     => $before_after,
-					'targeting'    => $targeting,
-					'slot'         => $slot,
-					'dom_slug'     => $dom_slug,
+					'ad_id'     => $ad_id,
+					'position'  => $before_after,
+					'targeting' => $targeting,
+					'slot'      => $slot,
+					'dom_slug'  => $dom_slug,
 				);
 			}
 		}
@@ -132,7 +126,7 @@ final class Ad_Placr_In_Content {
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param array<string, mixed> $targeting Placement targeting blob.
+	 * @param array<string, mixed> $targeting Ad targeting blob.
 	 * @return int
 	 */
 	private static function clamp_paragraph_index( array $targeting ): int {
@@ -142,17 +136,18 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Stable DOM id slug: targeting `slot_id` when set, else placement post ID.
+	 * Stable DOM id slug ending in the unified Ad post ID.
 	 *
-	 * Sanitized to HTML id-safe characters so CSS `#ad-placr-ic-{slug}` stays valid.
+	 * A migrated `slot_id` prefix preserves recognizable legacy identity while
+	 * the Ad ID suffix guarantees uniqueness for multi-Ad paragraph targets.
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param array<string, mixed> $targeting    Placement targeting blob.
-	 * @param int                  $placement_id Placement post ID.
+	 * @param array<string, mixed> $targeting Ad targeting blob.
+	 * @param int                  $ad_id     Unified Ad post ID.
 	 * @return string
 	 */
-	private static function resolve_dom_slug( array $targeting, int $placement_id ): string {
+	private static function resolve_dom_slug( array $targeting, int $ad_id ): string {
 		$raw = '';
 
 		if ( isset( $targeting['slot_id'] ) && is_scalar( $targeting['slot_id'] ) ) {
@@ -161,10 +156,10 @@ final class Ad_Placr_In_Content {
 
 		$slug = preg_replace( '/[^a-zA-Z0-9_\-]/', '', $raw );
 		if ( ! is_string( $slug ) || '' === $slug ) {
-			return (string) $placement_id;
+			return (string) $ad_id;
 		}
 
-		return $slug;
+		return $slug . '-' . $ad_id;
 	}
 
 	/**
@@ -172,7 +167,7 @@ final class Ad_Placr_In_Content {
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param array<string, mixed> $targeting    Placement targeting blob.
+	 * @param array<string, mixed> $targeting    Ad targeting blob.
 	 * @param string               $dom_slug     Sanitized slug used in `id` / DOM id.
 	 * @param int                  $paragraph    Clamped 1-based paragraph index.
 	 * @param string               $before_after `before` or `after`.
@@ -182,9 +177,23 @@ final class Ad_Placr_In_Content {
 		$post_types = isset( $targeting['post_types'] ) && is_array( $targeting['post_types'] )
 			? $targeting['post_types']
 			: array();
+		$slot_id    = '';
+
+		if ( isset( $targeting['slot_id'] ) && is_scalar( $targeting['slot_id'] ) ) {
+			$resolved = preg_replace( '/[^a-zA-Z0-9_\-]/', '', (string) $targeting['slot_id'] );
+			$slot_id  = is_string( $resolved ) ? $resolved : '';
+		}
+
+		/*
+		 * The legacy filter payload retains the saved slot identity. The separate
+		 * DOM slug may include the Ad ID suffix needed for unique wrappers.
+		 */
+		if ( '' === $slot_id ) {
+			$slot_id = $dom_slug;
+		}
 
 		return array(
-			'id'              => $dom_slug,
+			'id'              => $slot_id,
 			'paragraph_index' => $paragraph,
 			'position'        => $before_after,
 			'post_types'      => $post_types,
@@ -192,61 +201,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * Build concatenated per-placement mobile override CSS (scoped by wrapper id).
-	 *
-	 * Only placements that list an ad with mobile override code need media queries.
-	 * CSS is scoped to `#ad-placr-ic-{slug}` so breakpoints never leak across slots.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param array<int, array<string, mixed>> $placements Displayable placement rows.
-	 * @return string
-	 */
-	private static function collect_inline_css_for_placements( array $placements ): string {
-		$css = '';
-
-		foreach ( $placements as $row ) {
-			$placement_id = (int) $row['placement_id'];
-			if ( ! self::placement_needs_mobile_css( $placement_id ) ) {
-				continue;
-			}
-
-			$slot       = $row['slot'];
-			$dom_id     = 'ad-placr-ic-' . (string) $row['dom_slug'];
-			$breakpoint = self::resolve_mobile_breakpoint( is_array( $slot ) ? $slot : array() );
-
-			$css .= Ad_Placr_Renderer::build_mobile_pair_css( '#' . $dom_id, $breakpoint );
-		}
-
-		return $css;
-	}
-
-	/**
-	 * Whether any weighted ad on the placement has non-empty mobile code.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int $placement_id Placement post ID.
-	 * @return bool
-	 */
-	private static function placement_needs_mobile_css( int $placement_id ): bool {
-		$ads = Ad_Placr_Placement::get_ads( $placement_id );
-
-		foreach ( $ads as $ad_row ) {
-			$ad_id = (int) $ad_row['ad_id'];
-			if ( $ad_id <= 0 ) {
-				continue;
-			}
-			if ( '' !== trim( Ad_Placr_Ad::get_mobile_code( $ad_id ) ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Insert all applicable CPT placements into post content.
+	 * Insert all applicable unified Ads into post content.
 	 *
 	 * Guards: main loop only (avoids widgets / secondary queries), no feeds, singular
 	 * views only. Global + per-slot filters can short-circuit without touching HTML.
@@ -283,23 +238,23 @@ final class Ad_Placr_In_Content {
 			return $content;
 		}
 
-		$placements = self::get_displayable_placements();
+		$ads = self::get_displayable_ads();
 
-		if ( empty( $placements ) ) {
+		if ( empty( $ads ) ) {
 			return $content;
 		}
 
 		$post_id = get_the_ID();
 
 		/*
-		 * Bucket placement HTML by paragraph index first, then inject once.
-		 * Re-walking the content per placement would renumber paragraphs after each
+		 * Bucket Ad HTML by paragraph index first, then inject once.
+		 * Re-walking the content per Ad would renumber paragraphs after each
 		 * insert and break “after paragraph 3” when another slot already inserted above it.
 		 */
 		$before_by_para = array();
 		$after_by_para  = array();
 
-		foreach ( $placements as $row ) {
+		foreach ( $ads as $row ) {
 			$slot = $row['slot'];
 
 			/**
@@ -320,14 +275,18 @@ final class Ad_Placr_In_Content {
 			$breakpoint = self::resolve_mobile_breakpoint( $slot );
 			$dom_id     = 'ad-placr-ic-' . (string) $row['dom_slug'];
 
-			$html = Ad_Placr_Renderer::render_placement(
-				(int) $row['placement_id'],
-				array(
-					'dom_id'         => $dom_id,
-					'modifier_class' => 'ad-placr--in-content',
-					'breakpoint'     => $breakpoint,
-					'echo'           => false,
-				)
+			$html = Ad_Placr_Frontend::with_mobile_breakpoint(
+				$breakpoint,
+				static function () use ( $row, $dom_id ): string {
+					return Ad_Placr_Renderer::render_ad(
+						(int) $row['ad_id'],
+						array(
+							'dom_id'         => $dom_id,
+							'modifier_class' => 'ad-placr--in-content',
+							'echo'           => false,
+						)
+					);
+				}
 			);
 
 			if ( '' === $html ) {

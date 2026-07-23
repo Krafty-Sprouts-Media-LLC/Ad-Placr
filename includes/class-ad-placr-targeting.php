@@ -1,6 +1,6 @@
 <?php
 /**
- * Placement targeting gate: one should_display() for every render path.
+ * Unified Ad targeting gate: one should_display() for every render path.
  *
  * Pure `matches()` evaluates the targeting blob against an injected request
  * context. Empty/missing rule families fail open. No UA device gating —
@@ -15,43 +15,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Evaluates Placement targeting rules.
+ * Evaluates unified Ad targeting rules.
  *
  * @since 2.4.0
  */
 final class Ad_Placr_Targeting {
 
 	/**
-	 * Whether a placement may render for the given request context.
+	 * Whether an Ad may render for the given request context.
 	 *
 	 * Loads active state + targeting meta, runs `matches()`, then the
 	 * `ad_placr_targeting_should_display` filter.
 	 *
 	 * @since 2.4.0
 	 *
-	 * @param int                  $placement_id Placement post ID.
-	 * @param array<string, mixed> $ctx          Request context (see normalize_context).
+	 * @param int                  $ad_id Unified Ad post ID.
+	 * @param array<string, mixed> $ctx   Request context (see normalize_context).
 	 * @return bool
 	 */
-	public static function should_display( int $placement_id, array $ctx ): bool {
-		if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
+	public static function should_display( int $ad_id, array $ctx ): bool {
+		if ( ! Ad_Placr_Ad::is_active( $ad_id ) ) {
 			return false;
 		}
 
-		$targeting = Ad_Placr_Placement::get_targeting( $placement_id );
+		$targeting = Ad_Placr_Ad::get_targeting( $ad_id );
 		$allowed   = self::matches( $targeting, $ctx );
 
 		/**
-		 * Filter whether a placement should display after core targeting.
+		 * Filter whether an Ad should display after its saved rules are checked.
 		 *
 		 * @since 2.4.0
 		 *
-		 * @param bool                 $allowed      Core evaluation result.
-		 * @param int                  $placement_id Placement post ID.
-		 * @param array<string, mixed> $ctx          Normalized request context.
-		 * @param array<string, mixed> $targeting    Targeting blob.
+		 * @param bool                 $allowed   Core evaluation result.
+		 * @param int                  $ad_id     Unified Ad post ID.
+		 * @param array<string, mixed> $ctx       Normalized request context.
+		 * @param array<string, mixed> $targeting Saved display rules.
 		 */
-		return (bool) apply_filters( 'ad_placr_targeting_should_display', $allowed, $placement_id, self::normalize_context( $ctx ), $targeting );
+		return (bool) apply_filters( 'ad_placr_targeting_should_display', $allowed, $ad_id, self::normalize_context( $ctx ), $targeting );
 	}
 
 	/**
@@ -253,7 +253,7 @@ final class Ad_Placr_Targeting {
 
 		/*
 		 * Empty post_types: fail open when contexts empty/`all`; hide when the
-		 * placement explicitly targets singular-only (2.1.0 behavior).
+		 * Ad explicitly targets singular-only (2.1.0 behavior).
 		 */
 		if ( $has_all ) {
 			return true;

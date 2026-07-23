@@ -1,13 +1,39 @@
 <?php
 /**
- * Pure Placement targeting matrix.
+ * Unified Ad targeting matrix.
  *
  * @package AdPlacr
  */
 
 use PHPUnit\Framework\TestCase;
+use Brain\Monkey;
+use Brain\Monkey\Functions;
 
 final class TargetingTest extends TestCase {
+
+	/**
+	 * Start Brain Monkey for each WordPress-function test.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		Monkey\setUp();
+	}
+
+	/**
+	 * Tear down Brain Monkey expectations after each test.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		Monkey\tearDown();
+		parent::tearDown();
+	}
 
 	/**
 	 * @return array<string, mixed>
@@ -178,5 +204,78 @@ final class TargetingTest extends TestCase {
 		$this->assertSame( 'guest', $ctx['user_state'] );
 		$this->assertSame( '/', $ctx['url_path'] );
 		$this->assertIsArray( $ctx['category_ids'] );
+	}
+
+	/**
+	 * Unpublished unified Ads fail the shared targeting gate.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_should_display_rejects_an_unpublished_ad(): void {
+		Functions\expect( 'get_post_type' )
+			->once()
+			->with( 91 )
+			->andReturn( Ad_Placr_Ad::POST_TYPE );
+		Functions\expect( 'get_post_status' )
+			->once()
+			->with( 91 )
+			->andReturn( 'draft' );
+		Functions\expect( 'get_post_meta' )->never();
+
+		$this->assertFalse( Ad_Placr_Targeting::should_display( 91, $this->base_ctx() ) );
+	}
+
+	/**
+	 * Published Ads use unified targeting metadata and the preserved filter.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_should_display_reads_unified_ad_targeting_and_filters_the_result(): void {
+		$targeting = array(
+			'contexts'   => array( 'singular' ),
+			'post_types' => array( 'post' ),
+		);
+		$ctx       = $this->base_ctx();
+
+		Functions\expect( 'get_post_type' )
+			->once()
+			->with( 42 )
+			->andReturn( Ad_Placr_Ad::POST_TYPE );
+		Functions\expect( 'get_post_status' )
+			->once()
+			->with( 42 )
+			->andReturn( 'publish' );
+		Functions\expect( 'get_post_meta' )
+			->once()
+			->with( 42, Ad_Placr_Ad::META_TARGETING, true )
+			->andReturn( $targeting );
+		Functions\expect( 'apply_filters' )
+			->once()
+			->with(
+				'ad_placr_targeting_should_display',
+				true,
+				42,
+				Ad_Placr_Targeting::normalize_context( $ctx ),
+				$targeting
+			)
+			->andReturn( true );
+
+		$this->assertTrue( Ad_Placr_Targeting::should_display( 42, $ctx ) );
+	}
+
+	/**
+	 * Legacy status normalization remains on the unified Ad transition API.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_unified_ad_normalizes_legacy_status_during_the_transition(): void {
+		$this->assertSame( 'inactive', Ad_Placr_Ad::normalize_status( '' ) );
+		$this->assertSame( 'active', Ad_Placr_Ad::normalize_status( 'ACTIVE' ) );
 	}
 }

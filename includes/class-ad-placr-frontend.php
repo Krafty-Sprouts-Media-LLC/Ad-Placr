@@ -3,7 +3,7 @@
  * Front-end dispatcher: registers automatic positions and applies context gates.
  *
  * Loops registry keys with handler=frontend, attaches echo/content callbacks,
- * then queries placements and renders the first non-empty HTML per position.
+ * then queries and renders every matching Ad for each position.
  *
  * @package AdPlacr
  * @since 2.2.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Registry-driven front-end placement dispatcher.
+ * Registry-driven front-end Ad dispatcher.
  *
  * @since 2.2.0
  */
@@ -94,7 +94,7 @@ final class Ad_Placr_Frontend {
 	}
 
 	/**
-	 * Enqueue sticky rail CSS when a left/right rail placement may display.
+	 * Enqueue sticky rail CSS when a left/right rail Ad may display.
 	 *
 	 * @since 2.2.0
 	 *
@@ -112,7 +112,7 @@ final class Ad_Placr_Frontend {
 
 		$has_candidate = false;
 		foreach ( $rail_keys as $key ) {
-			if ( ! empty( self::get_displayable_placement_ids( $key ) ) ) {
+			if ( ! empty( self::get_displayable_ad_ids( $key ) ) ) {
 				$has_candidate = true;
 				break;
 			}
@@ -131,7 +131,7 @@ final class Ad_Placr_Frontend {
 	}
 
 	/**
-	 * Echo the first non-empty placement HTML for an automatic position key.
+	 * Echo all non-empty Ad HTML for an automatic position key.
 	 *
 	 * @since 2.2.0
 	 *
@@ -143,7 +143,7 @@ final class Ad_Placr_Frontend {
 			return;
 		}
 
-		$html = self::render_first_for_position( $key );
+		$html = self::render_all_for_position( $key );
 		if ( '' === $html ) {
 			return;
 		}
@@ -153,7 +153,7 @@ final class Ad_Placr_Frontend {
 	}
 
 	/**
-	 * Prepend or append placement HTML around post content for content-mode keys.
+	 * Prepend or append Ad HTML around post content for content-mode keys.
 	 *
 	 * Same loop/feed guards as in-content: main query loop only, never admin/feed.
 	 *
@@ -172,7 +172,7 @@ final class Ad_Placr_Frontend {
 			return $content;
 		}
 
-		$html = self::render_first_for_position( $key );
+		$html = self::render_all_for_position( $key );
 		if ( '' === $html ) {
 			return $content;
 		}
@@ -249,17 +249,17 @@ final class Ad_Placr_Frontend {
 	}
 
 	/**
-	 * Render the first non-empty placement for a position, or empty string.
+	 * Render every displayable Ad for a position in deterministic query order.
 	 *
-	 * Applies registry context, then active + targeting gates, then stops at
-	 * the first non-empty Renderer::render_placement result (one band per key).
+	 * Applies registry context, then active + targeting gates. Each Ad receives
+	 * a unique wrapper ID so responsive styles remain scoped across siblings.
 	 *
 	 * @since 2.2.0
 	 *
 	 * @param string $key Canonical position key.
 	 * @return string
 	 */
-	private static function render_first_for_position( string $key ): string {
+	public static function render_all_for_position( string $key ): string {
 		$descriptor = self::descriptor_for( $key );
 		if ( null === $descriptor ) {
 			return '';
@@ -273,38 +273,117 @@ final class Ad_Placr_Frontend {
 		}
 
 		$safe_key       = sanitize_key( $key );
-		$dom_id         = 'ad-placr-pos-' . $safe_key;
-		$modifier_class = self::modifier_class_for( $key, $safe_key );
-		$breakpoint     = Ad_Placr_Renderer::resolve_breakpoint();
+		$modifier_class = self::modifier_class_for( $safe_key );
 
-		foreach ( self::get_displayable_placement_ids( $key ) as $placement_id ) {
-			$html = Ad_Placr_Renderer::render_placement(
-				$placement_id,
-				array(
-					'dom_id'         => $dom_id,
-					'modifier_class' => $modifier_class,
-					'breakpoint'     => $breakpoint,
-					'echo'           => false,
-				)
-			);
-
-			if ( '' !== $html ) {
-				return $html;
+		$html = self::join_rendered_ads(
+			self::get_displayable_ad_ids( $key ),
+			static function ( int $ad_id ) use ( $safe_key, $modifier_class ): string {
+				return Ad_Placr_Renderer::render_ad(
+					$ad_id,
+					array(
+						'dom_id'         => 'ad-placr-pos-' . $safe_key . '-' . $ad_id,
+						'modifier_class' => $modifier_class,
+						'echo'           => false,
+					)
+				);
 			}
-		}
+		);
 
-		return '';
+		return self::wrap_sticky_ads( $key, $html );
 	}
 
 	/**
-	 * Active placement IDs for a position that pass targeting for this request.
+	 * Concatenate rendered Ad HTML while preserving the supplied ID order.
+	 *
+	 * Empty renderer results naturally contribute no markup, allowing one
+	 * ineligible Ad to be skipped without suppressing later matching records.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int[]            $ad_ids Ad IDs in deterministic query order.
+	 * @param callable(int):string $render Renderer callback for one Ad ID.
+	 * @return string
+	 */
+	public static function join_rendered_ads( array $ad_ids, callable $render ): string {
+		$html = '';
+
+		foreach ( $ad_ids as $ad_id ) {
+			$html .= (string) $render( (int) $ad_id );
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Give sticky siblings one positioned stack owner.
+	 *
+	 * Footer and rail styles position their modifier class. Applying that class
+	 * to each Ad would place siblings at identical coordinates, so only this
+	 * outer region owns positioning while child Ad IDs remain unique.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $key  Canonical position key.
+	 * @param string $html Concatenated rendered Ad HTML.
+	 * @return string
+	 */
+	public static function wrap_sticky_ads( string $key, string $html ): string {
+		if ( '' === $html ) {
+			return '';
+		}
+
+		if ( Ad_Placr_Positions::STICKY_FOOTER === $key ) {
+			$dom_id   = 'ad-placr-footer-sticky';
+			$modifier = 'ad-placr--footer-sticky';
+		} elseif ( Ad_Placr_Positions::STICKY_LEFT_RAIL === $key ) {
+			$dom_id   = 'ad-placr-pos-sticky_left_rail-stack';
+			$modifier = 'ad-placr--rail-left';
+		} elseif ( Ad_Placr_Positions::STICKY_RIGHT_RAIL === $key ) {
+			$dom_id   = 'ad-placr-pos-sticky_right_rail-stack';
+			$modifier = 'ad-placr--rail-right';
+		} else {
+			return $html;
+		}
+
+		return '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ' . esc_attr( $modifier ) . '">' . $html . '</div>';
+	}
+
+	/**
+	 * Temporarily bridge a specialized breakpoint into unified rendering.
+	 *
+	 * Existing footer and in-content filters resolve their saved breakpoint
+	 * before calling this helper. The temporary highest-priority callback makes
+	 * that value authoritative only during the associated renderer call.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int              $breakpoint Resolved specialized mobile maximum.
+	 * @param callable():string $render     Renderer callback.
+	 * @return string
+	 */
+	public static function with_mobile_breakpoint( int $breakpoint, callable $render ): string {
+		$override = static function () use ( $breakpoint ): int {
+			return $breakpoint;
+		};
+
+		add_filter( 'ad_placr_mobile_breakpoint', $override, PHP_INT_MAX );
+
+		try {
+			return (string) $render();
+		} finally {
+			remove_filter( 'ad_placr_mobile_breakpoint', $override, PHP_INT_MAX );
+		}
+	}
+
+	/**
+	 * Active Ad IDs for a position that pass targeting for this request.
 	 *
 	 * @since 2.2.0
 	 *
 	 * @param string $key Canonical position key.
 	 * @return int[]
 	 */
-	private static function get_displayable_placement_ids( string $key ): array {
+	private static function get_displayable_ad_ids( string $key ): array {
 		if ( null === self::descriptor_for( $key ) ) {
 			return array();
 		}
@@ -312,34 +391,27 @@ final class Ad_Placr_Frontend {
 		$ctx = Ad_Placr_Targeting::build_request_context();
 		$out = array();
 
-		foreach ( Ad_Placr_Placement::query_ids_for_position( $key ) as $placement_id ) {
-			if ( Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
-				$out[] = $placement_id;
+		foreach ( Ad_Placr_Ad::query_ids_for_position( $key ) as $ad_id ) {
+			if ( Ad_Placr_Targeting::should_display( $ad_id, $ctx ) ) {
+				$out[] = $ad_id;
 			}
 		}
 
 		return $out;
 	}
-
 	/**
-	 * BEM modifier class(es) for a position key; rails get an extra rail class.
+	 * BEM modifier class for a position key.
+	 *
+	 * Sticky positioning belongs to the aggregate stack wrapper so sibling Ads
+	 * flow inside one fixed owner instead of overlapping at one coordinate.
 	 *
 	 * @since 2.2.0
 	 *
-	 * @param string $key      Canonical position key.
 	 * @param string $safe_key Sanitized key.
 	 * @return string
 	 */
-	private static function modifier_class_for( string $key, string $safe_key ): string {
-		$modifier = 'ad-placr--pos-' . $safe_key;
-
-		if ( Ad_Placr_Positions::STICKY_LEFT_RAIL === $key ) {
-			$modifier .= ' ad-placr--rail-left';
-		} elseif ( Ad_Placr_Positions::STICKY_RIGHT_RAIL === $key ) {
-			$modifier .= ' ad-placr--rail-right';
-		}
-
-		return $modifier;
+	private static function modifier_class_for( string $safe_key ): string {
+		return 'ad-placr--pos-' . $safe_key;
 	}
 
 	/**

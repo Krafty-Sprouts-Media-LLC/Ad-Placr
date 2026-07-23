@@ -1,9 +1,9 @@
 <?php
 /**
- * Front-end output for the sticky footer placement.
+ * Front-end output for sticky-footer Ads.
  *
- * Prints a fixed footer region on `wp_footer` (priority 100). Output is driven by
- * active `sticky_footer` Placement CPTs via `Ad_Placr_Renderer` — not option ad code.
+ * Prints fixed footer regions on `wp_footer` (priority 100). Output is driven by
+ * active unified Ads assigned to `sticky_footer` via `Ad_Placr_Renderer`.
  * Device switching stays CSS-only (no user-agent sniffing).
  *
  * @package AdPlacr
@@ -11,7 +11,7 @@
  */
 
 /**
- * Renders the floating footer ad region from CPT placements.
+ * Renders floating footer Ad regions from unified Ad records.
  *
  * @since 0.1.0
  */
@@ -30,7 +30,10 @@ final class Ad_Placr_Footer_Sticky {
 	}
 
 	/**
-	 * Enqueue front-end styles when a displayable sticky_footer placement exists.
+	 * Enqueue front-end styles when a displayable sticky-footer Ad exists.
+	 *
+	 * Responsive slot CSS is emitted by the renderer for the selected version,
+	 * so this path no longer scans all candidate creative metadata.
 	 *
 	 * @since 0.1.0
 	 *
@@ -47,50 +50,34 @@ final class Ad_Placr_Footer_Sticky {
 			array(),
 			AD_PLACR_VERSION
 		);
-
-		$placement_ids = self::get_displayable_placement_ids();
-		$context       = array( 'placement_ids' => $placement_ids );
-		$breakpoint    = self::resolve_mobile_breakpoint( $context );
-
-		/*
-		 * Practical approach: if any candidate placement lists an ad with mobile
-		 * override code, enqueue dual-slot CSS for the single footer band id.
-		 * The eventual weighted pick may or may not use that ad.
-		 */
-		if ( self::candidates_need_mobile_css( $placement_ids ) ) {
-			$inline = Ad_Placr_Renderer::build_mobile_pair_css( '#ad-placr-footer-sticky', $breakpoint );
-			if ( '' !== $inline ) {
-				wp_add_inline_style( 'ad-placr-footer-sticky', $inline );
-			}
-		}
 	}
 
 	/**
-	 * Whether any active sticky_footer placement should display on this request.
+	 * Whether any active sticky-footer Ad should display on this request.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
 	private static function should_output(): bool {
-		return ! empty( self::get_displayable_placement_ids() );
+		return ! empty( self::get_displayable_ad_ids() );
 	}
 
 	/**
-	 * Active sticky_footer placement IDs that pass targeting for this request.
+	 * Active sticky-footer Ad IDs that pass targeting for this request.
 	 *
 	 * @since 2.1.0
 	 *
 	 * @return int[]
 	 */
-	private static function get_displayable_placement_ids(): array {
-		$ids = Ad_Placr_Placement::query_ids_for_position( Ad_Placr_Positions::STICKY_FOOTER );
+	private static function get_displayable_ad_ids(): array {
+		$ids = Ad_Placr_Ad::query_ids_for_position( Ad_Placr_Positions::STICKY_FOOTER );
 		$ctx = Ad_Placr_Targeting::build_request_context();
 		$out = array();
 
-		foreach ( $ids as $placement_id ) {
-			if ( Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
-				$out[] = $placement_id;
+		foreach ( $ids as $ad_id ) {
+			if ( Ad_Placr_Targeting::should_display( $ad_id, $ctx ) ) {
+				$out[] = $ad_id;
 			}
 		}
 
@@ -98,34 +85,10 @@ final class Ad_Placr_Footer_Sticky {
 	}
 
 	/**
-	 * Whether any displayable candidate has an ad with non-empty mobile code.
+	 * Print markup for every matching sticky-footer Ad.
 	 *
-	 * @since 2.1.0
-	 *
-	 * @param int[] $placement_ids Displayable placement IDs.
-	 * @return bool
-	 */
-	private static function candidates_need_mobile_css( array $placement_ids ): bool {
-		foreach ( $placement_ids as $placement_id ) {
-			$ads = Ad_Placr_Placement::get_ads( $placement_id );
-			foreach ( $ads as $row ) {
-				$ad_id = (int) $row['ad_id'];
-				if ( $ad_id <= 0 ) {
-					continue;
-				}
-				if ( '' !== trim( Ad_Placr_Ad::get_mobile_code( $ad_id ) ) ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Print markup in the footer — first non-empty sticky_footer placement only.
-	 *
-	 * A single DOM id (`ad-placr-footer-sticky`) is reserved for one footer band.
+	 * Each wrapper ends in its Ad ID so several matching records can coexist
+	 * without duplicate DOM IDs or cross-scoped responsive CSS.
 	 *
 	 * @since 0.1.0
 	 *
@@ -136,20 +99,20 @@ final class Ad_Placr_Footer_Sticky {
 			return;
 		}
 
-		$placement_ids = self::get_displayable_placement_ids();
-		if ( empty( $placement_ids ) ) {
+		$ad_ids = self::get_displayable_ad_ids();
+		if ( empty( $ad_ids ) ) {
 			return;
 		}
 
-		$context = array( 'placement_ids' => $placement_ids );
+		$context = array( 'ad_ids' => $ad_ids );
 
 		/**
-		 * Filter whether the footer sticky placement should render.
+		 * Filter whether the footer sticky Ads should render.
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param bool                 $display Whether to display the placement.
-		 * @param array<string, mixed> $context Request context (`placement_ids` int[]).
+		 * @param bool                 $display Whether to display the Ads.
+		 * @param array<string, mixed> $context Request context (`ad_ids` int[]).
 		 */
 		$display = apply_filters( 'ad_placr_footer_sticky_should_display', true, $context );
 
@@ -158,53 +121,60 @@ final class Ad_Placr_Footer_Sticky {
 		}
 
 		$breakpoint = self::resolve_mobile_breakpoint( $context );
+		$html       = Ad_Placr_Frontend::with_mobile_breakpoint(
+			$breakpoint,
+			static function () use ( $ad_ids ): string {
+				$output = '';
 
-		/*
-		 * One sticky footer band only: walk candidates in query order and stop at
-		 * the first placement that returns non-empty renderer HTML.
-		 */
-		foreach ( $placement_ids as $placement_id ) {
-			$html = Ad_Placr_Renderer::render_placement(
-				$placement_id,
-				array(
-					'dom_id'         => 'ad-placr-footer-sticky',
-					'modifier_class' => 'ad-placr--footer-sticky',
-					'breakpoint'     => $breakpoint,
-					'echo'           => false,
-				)
-			);
+				/*
+				 * Preserve query order while the outer footer region owns fixed
+				 * positioning. Child wrappers keep unique responsive selectors.
+				 */
+				foreach ( $ad_ids as $ad_id ) {
+					$output .= Ad_Placr_Renderer::render_ad(
+						$ad_id,
+						array(
+							'dom_id'         => 'ad-placr-footer-sticky-' . $ad_id,
+							'modifier_class' => 'ad-placr--footer-sticky-item',
+							'echo'           => false,
+						)
+					);
+				}
 
-			if ( '' === $html ) {
-				continue;
+				return $output;
 			}
+		);
+		$html       = Ad_Placr_Frontend::wrap_sticky_ads( Ad_Placr_Positions::STICKY_FOOTER, $html );
 
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network code; stored by privileged users.
-			echo $html;
+		if ( '' === $html ) {
 			return;
 		}
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network code; stored by privileged users.
+		echo $html;
 	}
 
 	/**
-	 * Resolve the CSS max-width breakpoint for “mobile” vs “desktop” slots.
+	 * Resolve the CSS max-width breakpoint for mobile versus desktop slots.
 	 *
-	 * Uses WordPress’s standard 782px small-screen breakpoint by default. Override via the
-	 * `ad_placr_footer_sticky_mobile_breakpoint` filter from a theme or companion plugin.
+	 * Uses WordPress's standard 782px small-screen breakpoint by default. The
+	 * legacy filter remains available while responsive output is renderer-owned.
 	 *
 	 * @since 0.1.2
 	 *
 	 * @param array<string, mixed> $context Request context (see render filter).
-	 * @return int Breakpoint in pixels (clamped 320–1200).
+	 * @return int Breakpoint in pixels (clamped 320-1200).
 	 */
 	private static function resolve_mobile_breakpoint( array $context ): int {
 		$default = 782;
 
 		/**
-		 * Filter the max-width breakpoint (pixels) for switching mobile vs universal footer ad code.
+		 * Filter the max-width breakpoint for switching mobile footer Ad code.
 		 *
 		 * @since 0.1.0
 		 *
 		 * @param int                  $default Default breakpoint (782).
-		 * @param array<string, mixed> $context Request context (`placement_ids` int[]).
+		 * @param array<string, mixed> $context Request context (`ad_ids` int[]).
 		 */
 		$breakpoint = (int) apply_filters( 'ad_placr_footer_sticky_mobile_breakpoint', $default, $context );
 

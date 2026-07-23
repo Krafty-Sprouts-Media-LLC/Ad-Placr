@@ -6,11 +6,37 @@
  */
 
 use PHPUnit\Framework\TestCase;
+use Brain\Monkey;
+use Brain\Monkey\Functions;
 
 /**
  * Matrix coverage for Ad_Placr_Frontend::context_matches().
  */
 final class FrontendContextTest extends TestCase {
+
+	/**
+	 * Start Brain Monkey for automatic-path compatibility tests.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		Monkey\setUp();
+	}
+
+	/**
+	 * Tear down Brain Monkey expectations after each test.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void {
+		Monkey\tearDown();
+		parent::tearDown();
+	}
 
 	/**
 	 * Data provider for the context_matches matrix.
@@ -160,5 +186,92 @@ final class FrontendContextTest extends TestCase {
 			$expected,
 			Ad_Placr_Frontend::context_matches( $context, $flags )
 		);
+	}
+
+	/**
+	 * Aggregates every rendered Ad without disturbing query order.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_join_rendered_ads_keeps_query_order_and_drops_empty_output(): void {
+		$this->assertSame(
+			'<div>first</div><div>second</div>',
+			Ad_Placr_Frontend::join_rendered_ads(
+				array( 9, 3, 12 ),
+				static function ( int $ad_id ): string {
+					return array(
+						9  => '<div>first</div>',
+						3  => '',
+						12 => '<div>second</div>',
+					)[ $ad_id ];
+				}
+			)
+		);
+	}
+
+	/**
+	 * Sticky siblings share one positioned owner instead of overlapping.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_wrap_sticky_ads_positions_the_stack_once(): void {
+		$children = '<div>first</div><div>second</div>';
+		$rail     = Ad_Placr_Frontend::wrap_sticky_ads( Ad_Placr_Positions::STICKY_LEFT_RAIL, $children );
+		$footer   = Ad_Placr_Frontend::wrap_sticky_ads( Ad_Placr_Positions::STICKY_FOOTER, $children );
+
+		$this->assertSame( 1, substr_count( $rail, 'ad-placr--rail-left' ) );
+		$this->assertStringContainsString( $children, $rail );
+		$this->assertSame( 1, substr_count( $footer, 'ad-placr--footer-sticky' ) );
+		$this->assertStringContainsString( $children, $footer );
+	}
+
+	/**
+	 * Specialized breakpoint filters control unified renderer resolution.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_with_mobile_breakpoint_temporarily_bridges_the_unified_filter(): void {
+		$installed = null;
+
+		Functions\expect( 'add_filter' )
+			->once()
+			->with(
+				'ad_placr_mobile_breakpoint',
+				\Mockery::on(
+					static function ( $callback ) use ( &$installed ): bool {
+						$installed = $callback;
+						return is_callable( $callback );
+					}
+				),
+				PHP_INT_MAX
+			)
+			->andReturn( true );
+		Functions\expect( 'remove_filter' )
+			->once()
+			->with(
+				'ad_placr_mobile_breakpoint',
+				\Mockery::on(
+					static function ( $callback ) use ( &$installed ): bool {
+						return $callback === $installed;
+					}
+				),
+				PHP_INT_MAX
+			)
+			->andReturn( true );
+
+		$result = Ad_Placr_Frontend::with_mobile_breakpoint(
+			640,
+			static function () use ( &$installed ): string {
+				return is_callable( $installed ) ? (string) $installed( 782 ) : '';
+			}
+		);
+
+		$this->assertSame( '640', $result );
 	}
 }

@@ -1,4 +1,13 @@
 <?php
+/**
+ * Position registry ownership and partition tests.
+ *
+ * @package AdPlacr
+ * @since 2.2.0
+ */
+
+require_once dirname( __DIR__, 2 ) . '/includes/class-ad-placr-footer-sticky.php';
+require_once dirname( __DIR__, 2 ) . '/includes/class-ad-placr-in-content.php';
 
 use PHPUnit\Framework\TestCase;
 use Brain\Monkey;
@@ -94,5 +103,53 @@ final class PositionsRegistryTest extends TestCase {
 			$this->assertNotSame( '', (string) $d['hook'], "$key missing hook" );
 			$this->assertContains( $d['render_mode'], array( 'echo', 'content' ) );
 		}
+	}
+
+	/**
+	 * Every automatically rendered position resolves to a callable owner.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_every_automatic_descriptor_has_a_concrete_runtime_owner(): void {
+		$owners = array(
+			'frontend'      => array( Ad_Placr_Frontend::class, 'register' ),
+			'footer_sticky' => array( Ad_Placr_Footer_Sticky::class, 'register' ),
+			'in_content'    => array( Ad_Placr_In_Content::class, 'register' ),
+		);
+
+		foreach ( Ad_Placr_Positions::defaults() as $key => $descriptor ) {
+			$owner_key = (string) $descriptor['handler'];
+
+			if ( Ad_Placr_Positions::STICKY_FOOTER === $key ) {
+				$owner_key = 'footer_sticky';
+			} elseif ( in_array( $key, array( Ad_Placr_Positions::IN_CONTENT_BEFORE_PARAGRAPH, Ad_Placr_Positions::IN_CONTENT_AFTER_PARAGRAPH ), true ) ) {
+				$owner_key = 'in_content';
+			} elseif ( 'manual' === $owner_key ) {
+				continue;
+			}
+
+			$this->assertArrayHasKey( $owner_key, $owners, "$key missing runtime owner" );
+			$this->assertTrue( is_callable( $owners[ $owner_key ] ), "$key runtime owner is not callable" );
+		}
+	}
+
+	/**
+	 * The legacy slot filter keeps the saved slot identity.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_in_content_slot_payload_keeps_saved_id_while_dom_id_is_unique(): void {
+		$targeting = array( 'slot_id' => 'legacy-slot' );
+		$resolve   = new ReflectionMethod( Ad_Placr_In_Content::class, 'resolve_dom_slug' );
+		$build     = new ReflectionMethod( Ad_Placr_In_Content::class, 'build_slot_shaped_array' );
+		$dom_slug = $resolve->invoke( null, $targeting, 42 );
+		$slot     = $build->invoke( null, $targeting, $dom_slug, 3, 'after' );
+
+		$this->assertSame( 'legacy-slot-42', $dom_slug );
+		$this->assertSame( 'legacy-slot', $slot['id'] );
 	}
 }
