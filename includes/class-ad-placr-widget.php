@@ -1,9 +1,9 @@
 <?php
 /**
- * Classic sidebar widget for manual Placement output.
+ * Classic sidebar widget for manual Ad output.
  *
- * Picks a Placement by ID and renders via Ad_Placr_Renderer. Optional sticky
- * modifier uses assets/css/widget.css. No hard-coded meta keys.
+ * Picks one sidebar-widget Ad ID and renders through the shared targeting and
+ * renderer services. The optional sticky modifier uses assets/css/widget.css.
  *
  * @package AdPlacr
  * @since 2.3.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Sidebar widget: Placement picker + sticky option.
+ * Sidebar widget: Ad picker + sticky option.
  *
  * @since 2.3.0
  */
@@ -58,7 +58,7 @@ final class Ad_Placr_Widget extends WP_Widget {
 			'ad_placr',
 			__( 'Ad Placr', 'ad-placr' ),
 			array(
-				'description' => __( 'Display an Ad Placr placement in a sidebar.', 'ad-placr' ),
+				'description' => __( 'Display an Ad Placr Ad in a sidebar.', 'ad-placr' ),
 				'classname'   => 'ad-placr-widget',
 			)
 		);
@@ -74,29 +74,30 @@ final class Ad_Placr_Widget extends WP_Widget {
 	 * @return void
 	 */
 	public function widget( $args, $instance ): void {
-		$placement_id = isset( $instance['placement_id'] ) ? absint( $instance['placement_id'] ) : 0;
-		$sticky       = ! empty( $instance['sticky'] );
+		$ad_id  = isset( $instance['ad_id'] ) ? absint( $instance['ad_id'] ) : 0;
+		$sticky = ! empty( $instance['sticky'] );
 
-		if ( $placement_id < 1 ) {
+		if ( $ad_id < 1 ) {
+			return;
+		}
+
+		if ( Ad_Placr_Positions::SIDEBAR_WIDGET !== Ad_Placr_Ad::get_position( $ad_id ) ) {
 			return;
 		}
 
 		$ctx = Ad_Placr_Targeting::build_request_context();
-		if ( ! Ad_Placr_Targeting::should_display( $placement_id, $ctx ) ) {
+		if ( ! Ad_Placr_Targeting::should_display( $ad_id, $ctx ) ) {
 			return;
 		}
-
 		$modifier = trim( 'ad-placr--sidebar-widget ' . self::sticky_modifier( $sticky ) );
 
-		$html = Ad_Placr_Renderer::render_placement(
-			$placement_id,
+		$html = Ad_Placr_Renderer::render_ad(
+			$ad_id,
 			array(
-				'dom_id'         => 'ad-placr-widget-' . $this->number . '-' . $placement_id,
+				'dom_id'         => 'ad-placr-widget-' . $this->number . '-' . $ad_id,
 				'modifier_class' => $modifier,
-				'breakpoint'     => Ad_Placr_Renderer::resolve_breakpoint(),
 			)
 		);
-
 		if ( '' === $html ) {
 			return;
 		}
@@ -124,8 +125,8 @@ final class Ad_Placr_Widget extends WP_Widget {
 	 */
 	public function update( $new_instance, $old_instance ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		return array(
-			'placement_id' => isset( $new_instance['placement_id'] ) ? absint( $new_instance['placement_id'] ) : 0,
-			'sticky'       => ! empty( $new_instance['sticky'] ) ? 1 : 0,
+			'ad_id'  => isset( $new_instance['ad_id'] ) ? absint( $new_instance['ad_id'] ) : 0,
+			'sticky' => ! empty( $new_instance['sticky'] ) ? 1 : 0,
 		);
 	}
 
@@ -138,27 +139,27 @@ final class Ad_Placr_Widget extends WP_Widget {
 	 * @return void
 	 */
 	public function form( $instance ): void {
-		$placement_id = isset( $instance['placement_id'] ) ? absint( $instance['placement_id'] ) : 0;
-		$sticky       = ! empty( $instance['sticky'] );
-		$placements   = $this->published_placements();
+		$ad_id  = isset( $instance['ad_id'] ) ? absint( $instance['ad_id'] ) : 0;
+		$sticky = ! empty( $instance['sticky'] );
+		$ads    = $this->published_sidebar_ads();
 
 		?>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'placement_id' ) ); ?>">
-				<?php esc_html_e( 'Placement', 'ad-placr' ); ?>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'ad_id' ) ); ?>">
+				<?php esc_html_e( 'Choose an Ad', 'ad-placr' ); ?>
 			</label>
 			<select
 				class="widefat"
-				id="<?php echo esc_attr( $this->get_field_id( 'placement_id' ) ); ?>"
-				name="<?php echo esc_attr( $this->get_field_name( 'placement_id' ) ); ?>"
+				id="<?php echo esc_attr( $this->get_field_id( 'ad_id' ) ); ?>"
+				name="<?php echo esc_attr( $this->get_field_name( 'ad_id' ) ); ?>"
 			>
 				<option value="0"><?php esc_html_e( '— Select —', 'ad-placr' ); ?></option>
-				<?php foreach ( $placements as $post ) : ?>
-					<option value="<?php echo esc_attr( (string) $post->ID ); ?>" <?php selected( $placement_id, (int) $post->ID ); ?>>
+				<?php foreach ( $ads as $post ) : ?>
+					<option value="<?php echo esc_attr( (string) $post->ID ); ?>" <?php selected( $ad_id, (int) $post->ID ); ?>>
 						<?php
 						echo esc_html(
 							sprintf(
-								/* translators: 1: placement title, 2: placement ID */
+								/* translators: 1: Ad title, 2: Ad ID */
 								__( '%1$s (#%2$d)', 'ad-placr' ),
 								$post->post_title ? $post->post_title : __( '(no title)', 'ad-placr' ),
 								(int) $post->ID
@@ -168,6 +169,9 @@ final class Ad_Placr_Widget extends WP_Widget {
 					</option>
 				<?php endforeach; ?>
 			</select>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Create an Ad with “Sidebar widget” as its display location, then select it here.', 'ad-placr' ); ?>
 		</p>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'sticky' ) ); ?>">
@@ -185,21 +189,27 @@ final class Ad_Placr_Widget extends WP_Widget {
 	}
 
 	/**
-	 * Published placement posts for the admin select.
+	 * Published sidebar-widget Ads for the admin select.
 	 *
 	 * @since 2.3.0
 	 *
 	 * @return WP_Post[]
 	 */
-	private function published_placements(): array {
+	private function published_sidebar_ads(): array {
+		$ad_ids = Ad_Placr_Ad::query_ids_for_position( Ad_Placr_Positions::SIDEBAR_WIDGET );
+		if ( empty( $ad_ids ) ) {
+			return array();
+		}
+
 		$posts = get_posts(
 			array(
-				'post_type'              => Ad_Placr_Placement::POST_TYPE,
+				'post_type'              => Ad_Placr_Ad::POST_TYPE,
 				'post_status'            => 'publish',
 				// Admin select only — capped so the widget form stays usable.
 				'posts_per_page'         => 100,
 				'orderby'                => 'title',
 				'order'                  => 'ASC',
+				'post__in'               => $ad_ids,
 				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,

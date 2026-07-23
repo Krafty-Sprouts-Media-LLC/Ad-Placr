@@ -27,4 +27,15 @@ final class ManualMetaKeysTest extends TestCase {
 		$this->assertSame( '_ad_placr_versions', Ad_Placr_Ad::META_VERSIONS );
 		$this->assertSame( '_ad_placr_notes', Ad_Placr_Ad::META_NOTES );
 	}
+
+	public function test_manual_handlers_do_not_read_legacy_placement_or_meta_contracts(): void {
+		$root            = dirname( __DIR__, 2 );
+		$shortcode_source = (string) file_get_contents( $root . '/includes/class-ad-placr-shortcode.php' );
+		$widget_source    = (string) file_get_contents( $root . '/includes/class-ad-placr-widget.php' );
+
+		foreach ( array( $shortcode_source, $widget_source ) as $source ) {
+			$this->assertStringNotContainsString( 'META_', $source );
+			$this->assertStringNotContainsString( 'Ad_Placr_Placement', $source );
+		}
+	}
 }
