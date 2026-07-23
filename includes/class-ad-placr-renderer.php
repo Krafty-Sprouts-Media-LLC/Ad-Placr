@@ -96,7 +96,7 @@ final class Ad_Placr_Renderer {
 	 * @return string Generated scoped inline CSS, or an empty string when unnecessary.
 	 */
 	public static function build_responsive_css( string $selector, int $mobile_max, int $tablet_max, array $devices, bool $has_mobile_code ): string {
-		$mobile_max = max( 320, min( 1023, $mobile_max ) );
+		$mobile_max = max( 320, min( 1200, $mobile_max ) );
 		$tablet_max = max( $mobile_max + 1, min( 1600, $tablet_max ) );
 		$devices    = self::normalize_devices( $devices );
 		$css        = array();
@@ -120,7 +120,10 @@ final class Ad_Placr_Renderer {
 	}
 
 	/**
-	 * Resolve the unified mobile breakpoint, clamped to the phone range.
+	 * Resolve the unified mobile breakpoint with legacy-compatible bounds.
+	 *
+	 * The 1200px ceiling preserves the documented footer and in-content filter
+	 * range when those specialized hooks bridge into unified rendering.
 	 *
 	 * @since 2.7.0
 	 *
@@ -136,7 +139,7 @@ final class Ad_Placr_Renderer {
 		 */
 		$breakpoint = (int) apply_filters( 'ad_placr_mobile_breakpoint', 782 );
 
-		return max( 320, min( 1023, $breakpoint ) );
+		return max( 320, min( 1200, $breakpoint ) );
 	}
 
 	/**
@@ -191,7 +194,7 @@ final class Ad_Placr_Renderer {
 			return self::resolve_mobile_breakpoint();
 		}
 
-		return max( 320, min( 1023, (int) apply_filters( 'ad_placr_mobile_breakpoint', $fallback ) ) );
+		return max( 320, min( 1200, (int) apply_filters( 'ad_placr_mobile_breakpoint', $fallback ) ) );
 	}
 
 	/**

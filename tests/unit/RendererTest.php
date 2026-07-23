@@ -79,4 +79,25 @@ final class RendererTest extends TestCase {
 
 		$this->assertStringContainsString( '<script>window.adNetworkCode()</script>', $html );
 	}
+
+	/**
+	 * Legacy 1200px mobile boundaries retain a valid tablet range.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_responsive_css_preserves_legacy_1200px_mobile_boundary(): void {
+		$css = Ad_Placr_Renderer::build_responsive_css(
+			'#ad-placr-test',
+			1200,
+			1024,
+			array( 'desktop', 'mobile' ),
+			true
+		);
+
+		$this->assertStringContainsString( '@media (max-width:1200px)', $css );
+		$this->assertStringContainsString( '@media (min-width:1201px)', $css );
+		$this->assertStringContainsString( '@media (min-width:1201px) and (max-width:1201px)', $css );
+	}
 }

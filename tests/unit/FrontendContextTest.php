@@ -1,8 +1,9 @@
 <?php
 /**
- * Pure context predicate helpers for Ad_Placr_Frontend.
+ * Front-end dispatcher context, aggregation, and compatibility tests.
  *
  * @package AdPlacr
+ * @since 2.2.0
  */
 
 use PHPUnit\Framework\TestCase;
@@ -10,7 +11,9 @@ use Brain\Monkey;
 use Brain\Monkey\Functions;
 
 /**
- * Matrix coverage for Ad_Placr_Frontend::context_matches().
+ * Covers pure front-end dispatch seams and preserved filter behavior.
+ *
+ * @since 2.2.0
  */
 final class FrontendContextTest extends TestCase {
 
@@ -264,14 +267,31 @@ final class FrontendContextTest extends TestCase {
 				PHP_INT_MAX
 			)
 			->andReturn( true );
+		Functions\expect( 'apply_filters' )
+			->once()
+			->with( 'ad_placr_mobile_breakpoint', 782 )
+			->andReturnUsing(
+				static function ( string $hook, int $default ) use ( &$installed ): int {
+					unset( $hook );
+
+					return is_callable( $installed ) ? (int) $installed( $default ) : $default;
+				}
+			);
 
 		$result = Ad_Placr_Frontend::with_mobile_breakpoint(
-			640,
-			static function () use ( &$installed ): string {
-				return is_callable( $installed ) ? (string) $installed( 782 ) : '';
+			1200,
+			static function (): string {
+				return Ad_Placr_Renderer::build_responsive_css(
+					'#ad-placr-bridge',
+					Ad_Placr_Renderer::resolve_mobile_breakpoint(),
+					1600,
+					array( 'desktop', 'tablet', 'mobile' ),
+					true
+				);
 			}
 		);
 
-		$this->assertSame( '640', $result );
+		$this->assertStringContainsString( '@media (max-width:1200px)', $result );
+		$this->assertStringContainsString( '@media (min-width:1201px)', $result );
 	}
 }

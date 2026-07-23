@@ -3,12 +3,18 @@
  * Unified Ad targeting matrix.
  *
  * @package AdPlacr
+ * @since 2.4.0
  */
 
 use PHPUnit\Framework\TestCase;
 use Brain\Monkey;
 use Brain\Monkey\Functions;
 
+/**
+ * Covers pure targeting rules and unified Ad gating.
+ *
+ * @since 2.4.0
+ */
 final class TargetingTest extends TestCase {
 
 	/**
