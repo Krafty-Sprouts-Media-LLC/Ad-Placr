@@ -41,4 +41,25 @@ final class AnalyticsTest extends TestCase {
 		$this->assertSame( '12', Ad_Placr_Analytics::format_stat_cell( 12, true ) );
 		$this->assertSame( '0', Ad_Placr_Analytics::format_stat_cell( 0, true ) );
 	}
+
+	public function test_version_id_normalization_is_bounded_and_safe(): void {
+		$this->assertSame(
+			'11111111-1111-4111-8111-111111111111',
+			Ad_Placr_Analytics::normalize_version_id( '11111111-1111-4111-8111-111111111111***' )
+		);
+		$this->assertSame( '', Ad_Placr_Analytics::normalize_version_id( '***' ) );
+	}
+
+	public function test_tracking_context_uses_version_not_placement(): void {
+		$context = Ad_Placr_Analytics::normalize_tracking_context(
+			array(
+				'event'      => 'click',
+				'ad_id'      => 42,
+				'version_id' => 'version-a',
+			)
+		);
+
+		$this->assertSame( 'version-a', $context['version_id'] );
+		$this->assertArrayNotHasKey( 'placement_id', $context );
+	}
 }

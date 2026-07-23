@@ -47,7 +47,7 @@ final class Ad_Placr_Analytics {
 	 *
 	 * @since 2.5.0
 	 */
-	public const SCHEMA_VERSION = 1;
+	public const SCHEMA_VERSION = 2;
 
 	/**
 	 * Register cron callback and front-end tracking assets.
@@ -122,6 +122,38 @@ final class Ad_Placr_Analytics {
 	}
 
 	/**
+	 * Normalize a stable Ad version identifier for storage and external hooks.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string $version_id Raw stable version identifier.
+	 * @return string Safe identifier bounded to the database column width.
+	 */
+	public static function normalize_version_id( string $version_id ): string {
+		$version_id = (string) preg_replace( '/[^a-zA-Z0-9_-]/', '', $version_id );
+
+		return substr( $version_id, 0, 64 );
+	}
+
+	/**
+	 * Normalize an event context without retaining obsolete Placement data.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param array<string, mixed> $context Raw event context.
+	 * @return array{event:string,ad_id:int,version_id:string}
+	 */
+	public static function normalize_tracking_context( array $context ): array {
+		$event = self::normalize_event_type( (string) ( $context['event'] ?? '' ) );
+
+		return array(
+			'event'      => null === $event ? '' : $event,
+			'ad_id'      => max( 0, (int) ( $context['ad_id'] ?? 0 ) ),
+			'version_id' => self::normalize_version_id( (string) ( $context['version_id'] ?? '' ) ),
+		);
+	}
+
+	/**
 	 * GMT datetime string for the retention cutoff.
 	 *
 	 * @since 2.5.0
@@ -181,21 +213,21 @@ final class Ad_Placr_Analytics {
 	}
 
 	/**
-	 * Count stored events, optionally filtered by type / ad / placement.
+	 * Count stored events, optionally filtered by type, Ad, or version.
 	 *
 	 * Returns 0 when the table is missing or storage has never been installed.
 	 *
 	 * @since 2.6.0
 	 *
-	 * @param string|null $event_type   impression|click|null (all).
-	 * @param int         $ad_id        Ad ID filter (0 = any).
-	 * @param int         $placement_id Placement ID filter (0 = any).
+	 * @param string|null $event_type impression|click|null (all).
+	 * @param int         $ad_id      Ad ID filter (0 = any).
+	 * @param string      $version_id Stable version ID filter (empty = any).
 	 * @return int
 	 */
-	public static function count_events( ?string $event_type = null, int $ad_id = 0, int $placement_id = 0 ): int {
+	public static function count_events( ?string $event_type = null, int $ad_id = 0, string $version_id = '' ): int {
 		global $wpdb;
 
-		if ( (int) get_option( self::OPTION_SCHEMA_VERSION, 0 ) < 1 ) {
+		if ( (int) get_option( self::OPTION_SCHEMA_VERSION, 0 ) < self::SCHEMA_VERSION ) {
 			return 0;
 		}
 
@@ -217,9 +249,10 @@ final class Ad_Placr_Analytics {
 			$args[]  = $ad_id;
 		}
 
-		if ( $placement_id > 0 ) {
-			$where[] = 'placement_id = %d';
-			$args[]  = $placement_id;
+		$version_id = self::normalize_version_id( $version_id );
+		if ( '' !== $version_id ) {
+			$where[] = 'version_id = %s';
+			$args[]  = $version_id;
 		}
 
 		$sql = 'SELECT COUNT(*) FROM {table} WHERE ' . implode( ' AND ', $where );
@@ -240,48 +273,48 @@ final class Ad_Placr_Analytics {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param string $event_type   impression|click.
-	 * @param int    $ad_id        Ad post ID.
-	 * @param int    $placement_id Placement post ID (0 when unknown).
+	 * @param string $event_type impression|click.
+	 * @param int    $ad_id      Ad post ID.
+	 * @param string $version_id Stable Ad version identifier.
 	 * @return bool True when the event type was valid (hook fired).
 	 */
-	public static function track( string $event_type, int $ad_id, int $placement_id = 0 ): bool {
-		$type = self::normalize_event_type( $event_type );
-		if ( null === $type || $ad_id < 1 ) {
+	public static function track( string $event_type, int $ad_id, string $version_id = '' ): bool {
+		$ctx = self::normalize_tracking_context(
+			array(
+				'event'      => $event_type,
+				'ad_id'      => $ad_id,
+				'version_id' => $version_id,
+			)
+		);
+
+		if ( '' === $ctx['event'] || $ctx['ad_id'] < 1 ) {
 			return false;
 		}
 
-		$placement_id = max( 0, $placement_id );
-		$ctx          = array(
-			'ad_id'        => $ad_id,
-			'placement_id' => $placement_id,
-			'event'        => $type,
-		);
-
-		if ( 'impression' === $type ) {
+		if ( 'impression' === $ctx['event'] ) {
 			/**
 			 * Fires on a tracked ad impression (always, even if storage is off).
 			 *
 			 * @since 2.5.0
 			 *
-			 * @param int                  $ad_id Ad post ID.
-			 * @param array<string, mixed> $ctx   Event context (no PII).
+			 * @param int                                            $ad_id Ad post ID.
+			 * @param array{event:string,ad_id:int,version_id:string} $ctx   Event context (no PII).
 			 */
-			do_action( 'ad_placr_impression', $ad_id, $ctx );
+			do_action( 'ad_placr_impression', $ctx['ad_id'], $ctx );
 		} else {
 			/**
 			 * Fires on a tracked ad click (always, even if storage is off).
 			 *
 			 * @since 2.5.0
 			 *
-			 * @param int                  $ad_id Ad post ID.
-			 * @param array<string, mixed> $ctx   Event context (no PII).
+			 * @param int                                            $ad_id Ad post ID.
+			 * @param array{event:string,ad_id:int,version_id:string} $ctx   Event context (no PII).
 			 */
-			do_action( 'ad_placr_click', $ad_id, $ctx );
+			do_action( 'ad_placr_click', $ctx['ad_id'], $ctx );
 		}
 
 		if ( self::should_persist( self::is_storage_enabled() ) ) {
-			self::insert_event( $type, $ad_id, $placement_id );
+			self::insert_event( $ctx['event'], $ctx['ad_id'], $ctx['version_id'] );
 		}
 
 		return true;
@@ -292,24 +325,24 @@ final class Ad_Placr_Analytics {
 	 *
 	 * @since 2.5.0
 	 *
-	 * @param string $event_type   Normalized type.
-	 * @param int    $ad_id        Ad ID.
-	 * @param int    $placement_id Placement ID.
+	 * @param string $event_type Normalized type.
+	 * @param int    $ad_id      Ad ID.
+	 * @param string $version_id Stable Ad version identifier.
 	 * @return bool
 	 */
-	public static function insert_event( string $event_type, int $ad_id, int $placement_id ): bool {
+	public static function insert_event( string $event_type, int $ad_id, string $version_id ): bool {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Single analytics write path by design.
 		$result = $wpdb->insert(
 			self::table_name(),
 			array(
-				'event_type'   => $event_type,
-				'ad_id'        => $ad_id,
-				'placement_id' => $placement_id,
-				'created_at'   => gmdate( 'Y-m-d H:i:s' ),
+				'event_type' => $event_type,
+				'ad_id'      => $ad_id,
+				'version_id' => self::normalize_version_id( $version_id ),
+				'created_at' => gmdate( 'Y-m-d H:i:s' ),
 			),
-			array( '%s', '%d', '%d', '%s' )
+			array( '%s', '%d', '%s', '%s' )
 		);
 
 		return false !== $result;
@@ -366,17 +399,28 @@ final class Ad_Placr_Analytics {
 
 		$table           = self::table_name();
 		$charset_collate = $wpdb->get_charset_collate();
+		$installed       = (int) get_option( self::OPTION_SCHEMA_VERSION, 0 );
+
+		/*
+		 * Schema v1 was local and unreleased, and its Placement rows cannot be
+		 * mapped reliably to stable Ad versions. Replace it before dbDelta so
+		 * no obsolete column or misleading statistics survive the upgrade.
+		 */
+		if ( 1 === $installed ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is trusted prefix plus a class constant.
+			$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		}
 
 		$sql = "CREATE TABLE {$table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			event_type varchar(16) NOT NULL,
 			ad_id bigint(20) unsigned NOT NULL,
-			placement_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			version_id varchar(64) NOT NULL DEFAULT '',
 			created_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			KEY created_at (created_at),
 			KEY ad_event (ad_id, event_type),
-			KEY placement_event (placement_id, event_type)
+			KEY version_event (version_id, event_type)
 		) {$charset_collate};";
 
 		dbDelta( $sql );

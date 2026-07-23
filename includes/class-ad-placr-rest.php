@@ -44,21 +44,23 @@ final class Ad_Placr_Rest {
 				'callback'            => array( __CLASS__, 'handle_track' ),
 				'permission_callback' => array( __CLASS__, 'permission_track' ),
 				'args'                => array(
-					'event'        => array(
+					'event'      => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'ad_id'        => array(
+					'ad_id'      => array(
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					),
-					'placement_id' => array(
-						'required'          => false,
-						'type'              => 'integer',
-						'default'           => 0,
-						'sanitize_callback' => 'absint',
+					'version_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => array(
+							Ad_Placr_Analytics::class,
+							'normalize_version_id',
+						),
 					),
 				),
 			)
@@ -99,11 +101,11 @@ final class Ad_Placr_Rest {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function handle_track( WP_REST_Request $request ) {
-		$event        = (string) $request->get_param( 'event' );
-		$ad_id        = (int) $request->get_param( 'ad_id' );
-		$placement_id = (int) $request->get_param( 'placement_id' );
+		$event      = (string) $request->get_param( 'event' );
+		$ad_id      = (int) $request->get_param( 'ad_id' );
+		$version_id = Ad_Placr_Analytics::normalize_version_id( (string) $request->get_param( 'version_id' ) );
 
-		if ( null === Ad_Placr_Analytics::normalize_event_type( $event ) || $ad_id < 1 ) {
+		if ( null === Ad_Placr_Analytics::normalize_event_type( $event ) || $ad_id < 1 || '' === $version_id ) {
 			return new WP_Error(
 				'ad_placr_rest_invalid',
 				__( 'Invalid tracking payload.', 'ad-placr' ),
@@ -111,7 +113,7 @@ final class Ad_Placr_Rest {
 			);
 		}
 
-		$ok = Ad_Placr_Analytics::track( $event, $ad_id, $placement_id );
+		$ok = Ad_Placr_Analytics::track( $event, $ad_id, $version_id );
 
 		return rest_ensure_response(
 			array(

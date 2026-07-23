@@ -20,15 +20,15 @@
 	 */
 	function send(event, el) {
 		var adId = parseInt(el.getAttribute('data-ad-id') || '0', 10);
-		var placementId = parseInt(el.getAttribute('data-placement-id') || '0', 10);
-		if (!adId) {
+		var versionId = el.getAttribute('data-version-id') || '';
+		if (!adId || !versionId) {
 			return;
 		}
 
 		var body = {
 			event: event,
 			ad_id: adId,
-			placement_id: placementId
+			version_id: versionId
 		};
 
 		try {
@@ -49,7 +49,7 @@
 	}
 
 	function observeImpressions() {
-		var nodes = document.querySelectorAll('.ad-placr[data-ad-id]');
+		var nodes = document.querySelectorAll('.ad-placr[data-ad-id][data-version-id]');
 		if (!nodes.length || typeof IntersectionObserver === 'undefined') {
 			return;
 		}
@@ -85,7 +85,7 @@
 				if (!t || !t.closest) {
 					return;
 				}
-				var el = t.closest('.ad-placr[data-ad-id]');
+				var el = t.closest('.ad-placr[data-ad-id][data-version-id]');
 				if (!el || el.getAttribute('data-ad-placr-clicked') === '1') {
 					return;
 				}

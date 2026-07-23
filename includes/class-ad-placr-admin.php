@@ -437,13 +437,13 @@ final class Ad_Placr_Admin {
 		}
 
 		if ( 'ad_placr_impressions' === $column ) {
-			$count = Ad_Placr_Analytics::count_events( 'impression', $post_id, 0 );
+			$count = Ad_Placr_Analytics::count_events( 'impression', $post_id );
 			echo esc_html( Ad_Placr_Analytics::format_stat_cell( $count, $storage ) );
 			return;
 		}
 
 		if ( 'ad_placr_clicks' === $column ) {
-			$count = Ad_Placr_Analytics::count_events( 'click', $post_id, 0 );
+			$count = Ad_Placr_Analytics::count_events( 'click', $post_id );
 			echo esc_html( Ad_Placr_Analytics::format_stat_cell( $count, $storage ) );
 		}
 	}
@@ -461,11 +461,9 @@ final class Ad_Placr_Admin {
 		foreach ( $columns as $key => $label ) {
 			$new[ $key ] = $label;
 			if ( 'title' === $key ) {
-				$new['ad_placr_position']    = __( 'Position', 'ad-placr' );
-				$new['ad_placr_status']      = __( 'Status', 'ad-placr' );
-				$new['ad_placr_ads']         = __( 'Ads', 'ad-placr' );
-				$new['ad_placr_impressions'] = __( 'Impressions', 'ad-placr' );
-				$new['ad_placr_clicks']      = __( 'Clicks', 'ad-placr' );
+				$new['ad_placr_position'] = __( 'Position', 'ad-placr' );
+				$new['ad_placr_status']   = __( 'Status', 'ad-placr' );
+				$new['ad_placr_ads']      = __( 'Ads', 'ad-placr' );
 			}
 		}
 
@@ -482,8 +480,6 @@ final class Ad_Placr_Admin {
 	 * @return void
 	 */
 	public static function render_placement_column( string $column, int $post_id ): void {
-		$storage = Ad_Placr_Analytics::is_storage_enabled();
-
 		if ( 'ad_placr_position' === $column ) {
 			$key   = Ad_Placr_Placement::get_position( $post_id );
 			$all   = Ad_Placr_Positions::all();
@@ -500,18 +496,6 @@ final class Ad_Placr_Admin {
 
 		if ( 'ad_placr_ads' === $column ) {
 			echo esc_html( (string) count( Ad_Placr_Placement::get_ads( $post_id ) ) );
-			return;
-		}
-
-		if ( 'ad_placr_impressions' === $column ) {
-			$count = Ad_Placr_Analytics::count_events( 'impression', 0, $post_id );
-			echo esc_html( Ad_Placr_Analytics::format_stat_cell( $count, $storage ) );
-			return;
-		}
-
-		if ( 'ad_placr_clicks' === $column ) {
-			$count = Ad_Placr_Analytics::count_events( 'click', 0, $post_id );
-			echo esc_html( Ad_Placr_Analytics::format_stat_cell( $count, $storage ) );
 		}
 	}
 
