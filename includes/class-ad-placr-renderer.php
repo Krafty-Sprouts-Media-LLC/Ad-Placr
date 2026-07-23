@@ -102,8 +102,8 @@ final class Ad_Placr_Renderer {
 		$css        = array();
 
 		if ( $has_mobile_code ) {
-			$css[] = '@media (max-width:' . $mobile_max . 'px){' . $selector . ' .ad-placr__universal{display:none!important}' . $selector . ' .ad-placr__mobile{' . self::SLOT_VISIBLE_INLINE . '}}';
-			$css[] = '@media (min-width:' . ( $mobile_max + 1 ) . 'px){' . $selector . ' .ad-placr__universal{' . self::SLOT_VISIBLE_INLINE . '}' . $selector . ' .ad-placr__mobile{display:none!important}}';
+			$css[] = '@media (max-width:' . $mobile_max . 'px){' . $selector . ' .ad-placr__slot--universal{display:none!important}' . $selector . ' .ad-placr__slot--mobile{' . self::SLOT_VISIBLE_INLINE . '}}';
+			$css[] = '@media (min-width:' . ( $mobile_max + 1 ) . 'px){' . $selector . ' .ad-placr__slot--universal{' . self::SLOT_VISIBLE_INLINE . '}' . $selector . ' .ad-placr__slot--mobile{display:none!important}}';
 		}
 
 		if ( ! in_array( 'mobile', $devices, true ) ) {

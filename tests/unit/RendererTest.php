@@ -33,9 +33,25 @@ final class RendererTest extends TestCase {
 		);
 
 		$this->assertStringContainsString( '@media (max-width:782px)', $css );
-		$this->assertStringContainsString( '.ad-placr__universal{display:none!important}', $css );
+		$this->assertStringContainsString( '.ad-placr__slot--universal{display:none!important}', $css );
 		$this->assertStringContainsString( '@media (min-width:783px) and (max-width:1024px)', $css );
 		$this->assertStringContainsString( '#ad-placr-test{display:none!important}', $css );
+	}
+
+	public function test_responsive_css_targets_the_emitted_mobile_slot_classes(): void {
+		$inner = Ad_Placr_Renderer::build_slots_inner_html( '<ins>desktop</ins>', '<ins>mobile</ins>' );
+		$css   = Ad_Placr_Renderer::build_responsive_css(
+			'#ad-placr-test',
+			782,
+			1024,
+			array( 'desktop', 'tablet', 'mobile' ),
+			true
+		);
+
+		$this->assertStringContainsString( 'ad-placr__slot--universal', $inner );
+		$this->assertStringContainsString( 'ad-placr__slot--mobile', $inner );
+		$this->assertStringContainsString( '.ad-placr__slot--universal{display:none!important}', $css );
+		$this->assertStringContainsString( '.ad-placr__slot--mobile{display:none!important}', $css );
 	}
 
 	public function test_wrapper_escapes_its_identifier_and_modifier(): void {
