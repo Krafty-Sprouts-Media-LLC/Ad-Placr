@@ -46,12 +46,12 @@ plugin by [Krafty Sprouts Media LLC](https://kraftysprouts.com). Read this **bef
 
 **Requirements:** PHP **8.0+**, WordPress **6.0+** (see plugin header — the source of truth).
 
-Where this is going: a **separated Ad ↔ Placement model** — an **Ad** (`ad_placr_ad`) is a reusable
-creative (code); a **Placement** (`ad_placr_placement`) is a position + targeting rules referencing a
-**weighted list of Ads** (rotation built in, A-B-ready). Current option-based placements migrate in.
-See `docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md` for the approved design,
-`IMPLEMENTATION-PLAN.md` for the phased roadmap, and the canonical **position taxonomy** (§6 here is
-the short version).
+Where this is going: a **unified Ad model**. One `ad_placr_ad` record owns its display location,
+display rules, status, and one or more weighted ad-code versions. Users manage everything on one
+screen; there is no Placements menu or separate Placement record. The local unreleased 2.6.0
+Ad/Placement implementation is transitional and must not be extended. See
+`docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md` for the approved replacement
+design. `IMPLEMENTATION-PLAN.md` and the 2026-07-22 design are retained as superseded history.
 
 ---
 
@@ -289,9 +289,12 @@ Concrete bugs found in `/adsly` during the audit. When re-implementing a feature
 
 ## 10. Reference docs in this repo
 
-- `docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md` — **approved design** (confirmed
-  architecture decisions + Ad Inserter-informed backlog tiers). Start here for the "what/why".
-- `IMPLEMENTATION-PLAN.md` — the phased roadmap (phases, taxonomy mapping, acceptance criteria).
+- `docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md` — **approved design** for
+  the one-Ad, one-screen model. Start here for the current "what/why".
+- `docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md` — superseded historical
+  Ad/Placement design; do not use for new work.
+- `IMPLEMENTATION-PLAN.md` — superseded historical roadmap. A replacement plan follows final review
+  of the unified design.
 - `development.md` — local setup, layout, PUC/update details.
 - `roadmap.md` — longer-horizon backlog beyond v1.
 - `changelog.md` — shipped history.

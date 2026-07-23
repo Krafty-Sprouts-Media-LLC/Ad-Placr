@@ -1,8 +1,15 @@
 # Ad Placr — Ad Manager Rebuild (Design Spec)
 
 **Date:** 2026-07-22
-**Status:** Approved design (pending final spec review)
-**Related:** `../../../IMPLEMENTATION-PLAN.md` (phased roadmap), `AGENTS.md` (conventions)
+**Status:** Superseded on 2026-07-23
+**Replacement:** `2026-07-23-ad-placr-unified-ad-model-design.md`
+
+> This document is retained as the historical design for the unreleased
+> two-record Ad/Placement implementation. Do not use it for new work. The
+> approved replacement uses one complete Ad record and no user-facing or
+> storage-level Placement.
+
+**Related:** `../../../IMPLEMENTATION-PLAN.md` (superseded roadmap), `AGENTS.md` (conventions)
 
 ## Purpose
 

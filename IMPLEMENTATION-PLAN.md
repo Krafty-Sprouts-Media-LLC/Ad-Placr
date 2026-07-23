@@ -1,19 +1,24 @@
 # Ad Placr — Unification & Rebuild Master Plan
 
+> **Status: superseded on 2026-07-23.** This is the historical plan for the
+> unreleased two-record Ad/Placement implementation. Do not execute additional
+> phases from this file. The approved replacement is
+> `docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md`.
+> A replacement implementation plan will be written after that specification
+> receives final file review.
+
 **Goal:** merge the useful features of the retired **Adsly** plugin into **Ad Placr**, turning Ad
 Placr from a two-placement plugin into a **full WordPress ad manager** — without inheriting Adsly's
 bugs. Guiding principle: **Adsly's feature set, rebuilt to Ad Placr's code quality.**
 
-This plan is the phased source of truth for the rebuild. Agents: read `AGENTS.md` first, then this,
-then the approved design at `docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md` (which
-holds the confirmed architecture decisions). Feature inspiration (not a spec) drawn selectively from
-**Ad Inserter**: <https://adinserter.pro/documentation/features>.
+This file is retained for implementation history only. Agents must read `AGENTS.md` first and use
+`docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md` for current architecture
+decisions. Feature inspiration (not a specification) was drawn selectively from **Ad Inserter**:
+<https://adinserter.pro/documentation/features>.
 
-**Confirmed core model:** ads and placements are **separated** — an **Ad** is a reusable creative
-(code, defined once); a **Placement** is a position + targeting rules that references a **weighted
-list of Ads** (rotation built in, A-B-ready). Admin is native/zero-build. v1 targeting = content
-location + device. See the design spec for the full decision record and the Ad Inserter-informed
-backlog tiers.
+**Historical core model:** this plan separated Ads and Placements. That decision is superseded.
+The approved model stores display location, display rules, and optional weighted ad-code versions
+inside one Ad record and one editing screen.
 
 ---
 
