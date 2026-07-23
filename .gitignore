@@ -8,6 +8,7 @@ Thumbs.db
 /ad-inserter/
 
 /vendor/
+/.worktrees/
 
 .phpunit.result.cache
 
