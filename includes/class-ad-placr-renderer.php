@@ -1,10 +1,10 @@
 <?php
 /**
- * Shared front-end renderer: pure HTML/CSS builders for placement wrappers.
+ * Shared front-end renderer: pure HTML/CSS builders for complete Ad wrappers.
  *
  * Pure builders concatenate markup without echoing. Ad network code strings are
- * inserted raw by design (privileged storage); structure attrs and disclosure
- * are escaped. Handlers pass an already-resolved breakpoint into the wrappers.
+ * inserted raw by design (privileged storage); wrapper attributes are escaped.
+ * The renderer selects one eligible Ad version for each render request.
  *
  * @package AdPlacr
  * @since 2.1.0
@@ -15,38 +15,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Builds placement wrapper markup and scoped mobile-pair CSS.
+ * Selects complete Ad versions and builds their responsive front-end markup.
  *
  * @since 2.1.0
  */
 final class Ad_Placr_Renderer {
 
 	/**
-	 * Visible slot stack for inline CSS (must match footer/in-content assets).
+	 * Visible slot stack for responsive inline CSS.
 	 *
 	 * @since 2.1.0
 	 */
-	public const SLOT_VISIBLE_INLINE = 'display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;width:100% !important;box-sizing:border-box !important;';
+	public const SLOT_VISIBLE_INLINE = 'display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;box-sizing:border-box!important;';
 
 	/**
-	 * Inner slot divs only: dual universal/mobile when mobile code is non-empty,
-	 * otherwise a single --all slot.
+	 * Build inner slot divs for universal and optional mobile code.
 	 *
 	 * Callers pass privileged ad-network snippets; those strings are not escaped.
 	 *
 	 * @since 2.1.0
 	 *
 	 * @param string $code        Universal / desktop ad code (raw).
-	 * @param string $mobile_code Mobile override ad code (raw); empty → single slot.
-	 * @return string Inner HTML (slot divs only).
+	 * @param string $mobile_code Mobile override ad code (raw); empty means one slot.
+	 * @return string Inner HTML containing raw trusted code.
 	 */
 	public static function build_slots_inner_html( string $code, string $mobile_code ): string {
 		$has_mobile = '' !== trim( $mobile_code );
 
 		/*
-		 * Dual-slot mode keeps both snippets in the DOM; build_mobile_pair_css()
-		 * toggles visibility at the breakpoint. Single-slot uses --all (no swap).
-		 * Ad network code is concatenated raw — see AGENTS.md §1.4.
+		 * Dual-slot mode keeps both snippets in the DOM. Responsive CSS toggles
+		 * their visibility, avoiding unreliable user-agent conditional rendering.
 		 */
 		if ( $has_mobile ) {
 			return '<div class="ad-placr__slot ad-placr__slot--universal">' . $code . '</div>'
@@ -57,88 +55,131 @@ final class Ad_Placr_Renderer {
 	}
 
 	/**
-	 * Full wrapper: outer div + optional disclosure + slot inner HTML.
+	 * Build the complete outer wrapper around trusted slot markup.
 	 *
-	 * Escapes `$dom_id`, `$modifier_class`, and the breakpoint attribute; escapes
-	 * disclosure text with esc_html. Does not escape `$code` / `$mobile_code`.
+	 * Escapes wrapper identity values but preserves trusted ad-network markup
+	 * inside `$inner` for the privileged-user storage exception.
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param string $dom_id         Outer element id (e.g. ad-placr-footer-sticky).
-	 * @param string $modifier_class BEM modifier (e.g. ad-placr--footer-sticky).
-	 * @param int    $breakpoint     Mobile max-width in pixels (for data-mobile-max).
-	 * @param string $code           Universal / desktop ad code (raw).
-	 * @param string $mobile_code    Mobile override ad code (raw).
-	 * @param string $disclosure     Optional label; empty → omitted.
-	 * @param int    $ad_id          Ad post ID for tracking attrs (0 omits).
-	 * @param int    $placement_id   Placement post ID for tracking attrs (0 omits).
+	 * @param string $dom_id         Outer element ID (e.g. ad-placr-footer-sticky).
+	 * @param string $modifier_class BEM modifier (e.g. ad-placr--pos-sticky_footer).
+	 * @param string $inner          Prebuilt slot HTML containing trusted ad code.
+	 * @param int    $ad_id          Complete Ad post ID for tracking attributes.
+	 * @param string $version_id     Stable selected Ad-version identifier.
 	 * @return string Complete wrapper HTML string.
 	 */
-	public static function build_wrapper_html(
-		string $dom_id,
-		string $modifier_class,
-		int $breakpoint,
-		string $code,
-		string $mobile_code,
-		string $disclosure,
-		int $ad_id = 0,
-		int $placement_id = 0
-	): string {
-		$html = '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ' . esc_attr( $modifier_class ) . '" data-mobile-max="' . esc_attr( (string) $breakpoint ) . '"';
-		if ( $ad_id > 0 ) {
-			$html .= ' data-ad-id="' . esc_attr( (string) $ad_id ) . '"';
-		}
-		if ( $placement_id > 0 ) {
-			$html .= ' data-placement-id="' . esc_attr( (string) $placement_id ) . '"';
-		}
-		$html .= '>';
-
-		$label = trim( $disclosure );
-
-		if ( '' !== $label ) {
-			$html .= '<div class="ad-placr__disclosure">' . esc_html( $label ) . '</div>';
-		}
-
-		$html .= self::build_slots_inner_html( $code, $mobile_code );
+	public static function build_wrapper_html( string $dom_id, string $modifier_class, string $inner, int $ad_id, string $version_id ): string {
+		$html  = '<div id="' . esc_attr( $dom_id ) . '" class="ad-placr ' . esc_attr( $modifier_class ) . '"';
+		$html .= ' data-ad-id="' . esc_attr( (string) $ad_id ) . '"';
+		$html .= ' data-version-id="' . esc_attr( $version_id ) . '">';
+		$html .= $inner;
 		$html .= '</div>';
 
 		return $html;
 	}
 
 	/**
-	 * Scoped media queries for dual universal/mobile slots.
+	 * Build scoped responsive CSS for one selected Ad version.
 	 *
-	 * Mirrors existing footer/in-content flex visibility rules. `$dom_id_selector`
-	 * is a CSS selector such as `#ad-placr-footer-sticky` or `#ad-placr-ic-1`.
+	 * Mobile override code replaces universal code only in the Mobile range. The
+	 * wrapper remains in the DOM for all ranges so device targeting can use CSS
+	 * instead of unreliable user-agent detection.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string             $selector        Scoped wrapper selector (usually #id).
+	 * @param int                $mobile_max      Mobile maximum width in pixels.
+	 * @param int                $tablet_max      Tablet maximum width in pixels.
+	 * @param array<int, string> $devices         Selected device ranges.
+	 * @param bool               $has_mobile_code Whether this version has mobile override code.
+	 * @return string Generated scoped inline CSS, or an empty string when unnecessary.
+	 */
+	public static function build_responsive_css( string $selector, int $mobile_max, int $tablet_max, array $devices, bool $has_mobile_code ): string {
+		$mobile_max = max( 320, min( 1023, $mobile_max ) );
+		$tablet_max = max( $mobile_max + 1, min( 1600, $tablet_max ) );
+		$devices    = self::normalize_devices( $devices );
+		$css        = array();
+
+		if ( $has_mobile_code ) {
+			$css[] = '@media (max-width:' . $mobile_max . 'px){' . $selector . ' .ad-placr__universal{display:none!important}' . $selector . ' .ad-placr__mobile{' . self::SLOT_VISIBLE_INLINE . '}}';
+			$css[] = '@media (min-width:' . ( $mobile_max + 1 ) . 'px){' . $selector . ' .ad-placr__universal{' . self::SLOT_VISIBLE_INLINE . '}' . $selector . ' .ad-placr__mobile{display:none!important}}';
+		}
+
+		if ( ! in_array( 'mobile', $devices, true ) ) {
+			$css[] = '@media (max-width:' . $mobile_max . 'px){' . $selector . '{display:none!important}}';
+		}
+		if ( ! in_array( 'tablet', $devices, true ) ) {
+			$css[] = '@media (min-width:' . ( $mobile_max + 1 ) . 'px) and (max-width:' . $tablet_max . 'px){' . $selector . '{display:none!important}}';
+		}
+		if ( ! in_array( 'desktop', $devices, true ) ) {
+			$css[] = '@media (min-width:' . ( $tablet_max + 1 ) . 'px){' . $selector . '{display:none!important}}';
+		}
+
+		return implode( '', $css );
+	}
+
+	/**
+	 * Resolve the unified mobile breakpoint, clamped to the phone range.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return int Mobile maximum width in pixels.
+	 */
+	public static function resolve_mobile_breakpoint(): int {
+		/**
+		 * Filter the largest viewport width treated as Mobile.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param int $breakpoint Mobile maximum width in pixels.
+		 */
+		$breakpoint = (int) apply_filters( 'ad_placr_mobile_breakpoint', 782 );
+
+		return max( 320, min( 1023, $breakpoint ) );
+	}
+
+	/**
+	 * Resolve the unified tablet breakpoint while preserving a non-empty range.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return int Tablet maximum width in pixels.
+	 */
+	public static function resolve_tablet_breakpoint(): int {
+		/**
+		 * Filter the largest viewport width treated as Tablet.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param int $breakpoint Tablet maximum width in pixels.
+		 */
+		$breakpoint = (int) apply_filters( 'ad_placr_tablet_breakpoint', 1024 );
+
+		return max( self::resolve_mobile_breakpoint() + 1, min( 1600, $breakpoint ) );
+	}
+
+	/**
+	 * Build legacy mobile-pair CSS through the unified responsive builder.
+	 *
+	 * Retained for unchanged footer and in-content callers until Tasks 3â€“8 move
+	 * them to the complete Ad rendering pipeline.
 	 *
 	 * @since 2.1.0
 	 *
 	 * @param string $dom_id_selector CSS selector for the wrapper (usually #id).
-	 * @param int    $breakpoint      Mobile max-width in pixels.
-	 * @return string Inline CSS string (may be empty only if caller skips dual mode).
+	 * @param int    $breakpoint      Mobile maximum width in pixels.
+	 * @return string Scoped responsive CSS.
 	 */
 	public static function build_mobile_pair_css( string $dom_id_selector, int $breakpoint ): string {
-		$bp       = (int) $breakpoint;
-		$selector = $dom_id_selector;
-		$visible  = self::SLOT_VISIBLE_INLINE;
-
-		return sprintf(
-			'@media screen and (max-width: %1$dpx){%4$s .ad-placr__slot--universal{display:none !important;}%4$s .ad-placr__slot--mobile{%2$s}}' .
-			'@media screen and (min-width: %3$dpx){%4$s .ad-placr__slot--universal{%2$s}%4$s .ad-placr__slot--mobile{display:none !important;}}',
-			$bp,
-			$visible,
-			$bp + 1,
-			$selector
-		);
+		return self::build_responsive_css( $dom_id_selector, $breakpoint, max( $breakpoint + 1, 1024 ), array( 'desktop', 'tablet', 'mobile' ), true );
 	}
 
 	/**
-	 * Resolve the unified mobile breakpoint (default 782px), clamped to 320–1200.
+	 * Resolve the legacy mobile breakpoint API through the unified filter.
 	 *
-	 * Handlers that need legacy filter names should call
-	 * `ad_placr_footer_sticky_mobile_breakpoint` / `ad_placr_in_content_mobile_breakpoint`
-	 * themselves and pass the result into the builders; this method only fires
-	 * `ad_placr_mobile_breakpoint`.
+	 * Retained for unchanged callers until Tasks 3â€“8 remove their legacy
+	 * breakpoint plumbing. New renderer code uses resolve_mobile_breakpoint().
 	 *
 	 * @since 2.1.0
 	 *
@@ -146,36 +187,25 @@ final class Ad_Placr_Renderer {
 	 * @return int Clamped breakpoint.
 	 */
 	public static function resolve_breakpoint( int $fallback = 782 ): int {
-		/**
-		 * Filter the max-width breakpoint (pixels) for mobile vs universal ad slots.
-		 *
-		 * @since 2.1.0
-		 *
-		 * @param int $fallback Default breakpoint (782).
-		 */
-		$breakpoint = (int) apply_filters( 'ad_placr_mobile_breakpoint', $fallback );
-
-		if ( $breakpoint < 320 ) {
-			$breakpoint = 320;
-		} elseif ( $breakpoint > 1200 ) {
-			$breakpoint = 1200;
+		if ( 782 === $fallback ) {
+			return self::resolve_mobile_breakpoint();
 		}
 
-		return $breakpoint;
+		return max( 320, min( 1023, (int) apply_filters( 'ad_placr_mobile_breakpoint', $fallback ) ) );
 	}
 
 	/**
-	 * Pick a weighted active ad for a placement and build wrapper HTML.
+	 * Temporarily bridge unchanged placement callers to unified Ad rendering.
 	 *
-	 * Returns an empty string when the placement/ad is inactive or both codes
-	 * are blank. `$args` keys: `dom_id`, `modifier_class`, `breakpoint` (int),
-	 * optional `echo` (bool, default false) for optional output.
+	 * Task 3 moves automatic callers to Ad IDs and Task 8 removes the Placement
+	 * runtime. The bridge never reads legacy Ad creative; selected Ads always
+	 * render through the unified version path below.
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param int                  $placement_id Placement post ID.
-	 * @param array<string, mixed> $args         Wrapper args (see summary).
-	 * @return string Wrapper HTML, or empty string when nothing should render.
+	 * @param int                  $placement_id Temporary Placement post ID.
+	 * @param array<string, mixed> $args         Wrapper arguments for render_ad().
+	 * @return string Wrapper HTML, or an empty string when nothing should render.
 	 */
 	public static function render_placement( int $placement_id, array $args ): string {
 		if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
@@ -187,73 +217,82 @@ final class Ad_Placr_Renderer {
 			return '';
 		}
 
-		/*
-		 * Weighted pick uses a full-range roll; choose_weighted reduces it modulo
-		 * the weight sum so any non-negative int is a valid band selector.
-		 */
 		$roll  = function_exists( 'wp_rand' ) ? wp_rand( 0, PHP_INT_MAX ) : random_int( 0, PHP_INT_MAX );
 		$ad_id = Ad_Placr_Placement::choose_weighted( $ads, $roll );
 
-		if ( null === $ad_id || ! Ad_Placr_Ad::is_active( $ad_id ) ) {
+		if ( null === $ad_id ) {
 			return '';
 		}
-
-		$args['placement_id'] = $placement_id;
-		$args['ad_id']        = $ad_id;
 
 		return self::render_ad( $ad_id, $args );
 	}
 
 	/**
-	 * Build wrapper HTML for a single active ad.
+	 * Select one eligible weighted version and build a responsive Ad wrapper.
 	 *
-	 * Same `$args` shape as `render_placement()`. Used by the shortcode `ad`
-	 * attribute and as the terminal step after weighted placement selection.
+	 * `$args` may provide a `dom_id`, `modifier_class`, and optional `echo` flag.
+	 * The method performs one weighted roll per render and records the selected
+	 * stable version ID in the output for analytics.
 	 *
 	 * @since 2.3.0
 	 *
 	 * @param int                  $ad_id Ad post ID.
-	 * @param array<string, mixed> $args  Wrapper args (see render_placement).
-	 * @return string Wrapper HTML, or empty string when nothing should render.
+	 * @param array<string, mixed> $args  Wrapper arguments (see summary).
+	 * @return string Wrapper HTML, or an empty string when nothing should render.
 	 */
 	public static function render_ad( int $ad_id, array $args ): string {
 		if ( ! Ad_Placr_Ad::is_active( $ad_id ) ) {
 			return '';
 		}
 
-		$code        = Ad_Placr_Ad::get_code( $ad_id );
-		$mobile_code = Ad_Placr_Ad::get_mobile_code( $ad_id );
-
-		if ( '' === trim( $code ) && '' === trim( $mobile_code ) ) {
+		$versions = Ad_Placr_Ad::eligible_versions( Ad_Placr_Ad::get_versions( $ad_id ) );
+		if ( empty( $versions ) ) {
 			return '';
 		}
 
-		$settings   = Ad_Placr_Plugin::get_settings();
-		$disclosure = isset( $settings['disclosure_text'] ) ? trim( (string) $settings['disclosure_text'] ) : '';
+		$total   = array_sum( array_column( $versions, 'weight' ) );
+		$roll    = 1 === $total ? 0 : wp_rand( 0, $total - 1 );
+		$version = Ad_Placr_Ad::choose_weighted_version( $versions, $roll );
+		if ( null === $version ) {
+			return '';
+		}
 
-		$dom_id          = isset( $args['dom_id'] ) ? (string) $args['dom_id'] : '';
-		$modifier_class  = isset( $args['modifier_class'] ) ? (string) $args['modifier_class'] : '';
-		$breakpoint      = isset( $args['breakpoint'] ) ? (int) $args['breakpoint'] : 782;
-		$do_echo         = ! empty( $args['echo'] );
-		$track_ad_id     = isset( $args['ad_id'] ) ? (int) $args['ad_id'] : $ad_id;
-		$track_placement = isset( $args['placement_id'] ) ? (int) $args['placement_id'] : 0;
+		$dom_id          = isset( $args['dom_id'] ) ? sanitize_html_class( (string) $args['dom_id'] ) : 'ad-placr-' . $ad_id;
+		$modifier        = isset( $args['modifier_class'] ) ? (string) $args['modifier_class'] : '';
+		$targeting       = Ad_Placr_Ad::get_targeting( $ad_id );
+		$devices         = self::normalize_devices( $targeting['devices'] ?? array() );
+		$mobile_max      = self::resolve_mobile_breakpoint();
+		$tablet_max      = self::resolve_tablet_breakpoint();
+		$inner           = self::build_slots_inner_html( $version['code'], $version['mobile_code'] );
+		$has_mobile_code = '' !== trim( $version['mobile_code'] );
+		$css             = self::build_responsive_css( '#' . $dom_id, $mobile_max, $tablet_max, $devices, $has_mobile_code );
+		$html            = '' !== $css ? '<style id="' . esc_attr( $dom_id . '-responsive' ) . '">' . $css . '</style>' : '';
+		$html           .= self::build_wrapper_html( $dom_id, $modifier, $inner, $ad_id, $version['version_id'] );
 
-		$html = self::build_wrapper_html(
-			$dom_id,
-			$modifier_class,
-			$breakpoint,
-			$code,
-			$mobile_code,
-			$disclosure,
-			$track_ad_id,
-			$track_placement
-		);
-
-		if ( $do_echo ) {
+		if ( ! empty( $args['echo'] ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network code; stored by privileged users.
 			echo $html;
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Normalize device targeting to supported viewport ranges.
+	 *
+	 * Empty or invalid targeting defaults to all ranges so malformed saved data
+	 * cannot accidentally suppress an otherwise eligible Ad.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param mixed $devices Raw device targeting value.
+	 * @return array<int, string> Supported device ranges in canonical order.
+	 */
+	private static function normalize_devices( $devices ): array {
+		$allowed = array( 'desktop', 'tablet', 'mobile' );
+		$devices = is_array( $devices ) ? array_map( 'strval', $devices ) : array();
+		$devices = array_values( array_intersect( $allowed, $devices ) );
+
+		return empty( $devices ) ? $allowed : $devices;
 	}
 }
