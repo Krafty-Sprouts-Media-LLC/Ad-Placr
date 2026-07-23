@@ -23,7 +23,7 @@
 - Every PHP file, class, member, method, property, constant, and new hook must follow `AGENTS.md` DocBlock and `@since` rules. Preserve every existing `@since`.
 - Use tabs, `array()` syntax, Yoda conditions, spaced calls, and the existing `Ad_Placr_*` naming convention.
 - Large or rarely read options must use autoload `false`.
-- Preserve source settings, old Placement posts, old creative-only Ad posts, old code meta, and old analytics rows during migration verification.
+- Preserve source settings, old Placement posts, old creative-only Ad posts, and old code meta during migration verification. The unreleased Placement-based analytics test rows may be discarded because the plugin has no production users.
 - Do not extend `Ad_Placr_Placement`; isolate legacy reads inside `Ad_Placr_Migration`, then remove the Placement class from runtime and test bootstraps.
 - Each task uses the test-driven cycle: add a focused failing test, run it and observe the expected failure, implement the minimum complete behavior, run the focused and full suites, then commit.
 
@@ -50,7 +50,7 @@
 - `includes/class-ad-placr-widget.php` — select and render one `sidebar_widget` Ad.
 - `includes/class-ad-placr-admin.php` — one editor, save validation, plain-language list columns, duplication, status actions, and warnings.
 - `includes/class-ad-placr-settings-page.php` — retain only the first-party statistics opt-in under the Ads menu while preserving legacy option data for migration audit.
-- `includes/class-ad-placr-analytics.php` — store/query stable version IDs while retaining old rows.
+- `includes/class-ad-placr-analytics.php` — store/query stable version IDs in a clean Ad/version event schema.
 - `includes/class-ad-placr-rest.php` — accept `version_id` instead of `placement_id`.
 - `assets/js/tracking.js` — send the selected version ID.
 - `includes/class-ad-placr-migration.php` — source-mapped v0.1.5 and local two-record migrations.
@@ -766,7 +766,7 @@ __( 'Choose an Ad', 'ad-placr' )
 __( 'Create an Ad with “Sidebar widget” as its display location, then select it here.', 'ad-placr' )
 ```
 
-For a one-time widget-instance compatibility read, accept the old `placement_id` only when `ad_id` is absent, but always save `ad_id`.
+Do not read the unreleased `placement_id` widget key. The plugin has no production users, so the widget stores and reads only `ad_id`.
 
 - [ ] **Step 5: Run tests and commit**
 
@@ -800,7 +800,7 @@ git commit -m "refactor: render manual Ads without Placements"
 - Consumes: wrapper attributes from Task 2.
 - Produces:
   - Analytics schema version 2 with new `version_id varchar(64) NOT NULL DEFAULT ''`.
-  - Existing `placement_id` column and rows retained for verification but unused by new events.
+  - A clean event schema containing `event_type`, `ad_id`, `version_id`, and `created_at`; no Placement column.
   - `Ad_Placr_Analytics::normalize_version_id( string ): string`.
   - `Ad_Placr_Analytics::normalize_tracking_context( array $context ): array{event:string,ad_id:int,version_id:string}`.
   - `count_events( ?string $event_type = null, int $ad_id = 0, string $version_id = '' ): int`.
@@ -846,7 +846,7 @@ Expected: FAIL because stable version IDs are not part of the analytics contract
 
 - [ ] **Step 3: Upgrade storage and PHP APIs**
 
-Bump the analytics schema version to `2`. In the `dbDelta()` SQL, retain `placement_id`, add:
+Bump the analytics schema version to `2`. When upgrading from schema version 1, drop the unreleased local events table before calling `dbDelta()`; the plugin has no production users and those test rows cannot identify stable Ad versions. The replacement SQL contains:
 
 ```sql
 version_id varchar(64) NOT NULL DEFAULT '',
@@ -863,7 +863,7 @@ public static function normalize_version_id( string $version_id ): string {
 }
 ```
 
-Change every new-event context, action DocBlock, SQL insert, and count filter from Placement ID to version ID. New inserts set retained `placement_id` to `0`. Keep retention and no-PII behavior unchanged. The external action context must contain `event`, `ad_id`, and `version_id`.
+It does not contain `placement_id`. Change every event context, action DocBlock, SQL insert, and count filter from Placement ID to version ID. Keep retention and no-PII behavior unchanged. The external action context must contain `event`, `ad_id`, and `version_id`.
 
 Add the pure normalization seam used by the test and external-action path:
 
@@ -1549,7 +1549,7 @@ Before exercising migration, use Local’s database backup/export facility. On t
 3. record the unified Ad count and migration-map option;
 4. load a second request and confirm neither count nor map entries increase;
 5. compare every migrated location, rule, main/mobile code, weight, and status with its source;
-6. confirm old source posts and old analytics rows still exist.
+6. confirm old source posts still exist and the analytics table now uses only Ad/version identity.
 
 Expected: one result per source Placement when local two-record data exists, otherwise one result per enabled v0.1.5 configuration; second run creates nothing.
 
@@ -1635,7 +1635,7 @@ Expected: all checks pass and `git status --short` is clean.
 - Main/mobile code and responsive Desktop/Tablet/Mobile visibility: Task 2.
 - Deterministic multi-Ad automatic rendering and shared targeting: Task 3.
 - Shared shortcode/widget pipeline: Task 4.
-- Ad/version analytics and retained historical rows: Task 5.
+- Clean Ad/version analytics with no unreleased Placement compatibility: Task 5.
 - Validation, duplicate-location warning, independent duplication, list columns, statistics, plain language: Task 6.
 - Lossless/idempotent public settings and local two-record migration with source map and no deletion: Task 7.
 - Runtime Placement retirement while retained sources remain auditable: Task 8.
@@ -1649,7 +1649,7 @@ The plan contains none of the prohibited placeholder markers, unspecified error-
 
 ### 3. Type and Name Consistency
 
-- Every runtime entry point uses `int $ad_id`; `placement_id` remains only a retained database column and migration/history input.
+- Every runtime entry point uses `int $ad_id`; `placement_id` remains only inside the one-time Ad-data migration reader and migration tests.
 - `version_id` is a sanitized string up to 64 characters in Ad versions, wrappers, REST, JavaScript, analytics storage, and statistics queries.
 - The only current meta constants are `META_POSITION`, `META_TARGETING`, `META_VERSIONS`, and `META_NOTES`.
 - `render_ad()` is the single rendering entry point across automatic, sticky, paragraph, shortcode, and widget paths.

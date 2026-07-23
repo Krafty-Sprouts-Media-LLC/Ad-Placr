@@ -363,11 +363,13 @@ For each `ad_placr_placement` post:
 If one old Ad is referenced by several Placements, its code is copied into each
 resulting unified Ad. The new records are independent.
 
-Old Placement posts, old creative-only Ads, old code meta, and old analytics
-rows are retained during verification. A source-to-result migration map
-prevents duplicates and supports audit. Cleanup is a separate explicit release
+Old Placement posts, old creative-only Ads, and old code meta are retained
+during verification. A source-to-result migration map prevents duplicates and
+supports audit. The unreleased local analytics schema has no production users,
+so its Placement-based test rows are discarded when the Ad/version schema is
+installed. Cleanup of the retained Ad sources is a separate explicit release
 step after migration has been verified; migration itself does not permanently
-delete source data.
+delete source Ad data.
 
 ## Security
 
