@@ -42,6 +42,20 @@ final class Ad_Placr_Migration {
 	public const OPTION_MIGRATION_MAP = 'ad_placr_unified_migration_map';
 
 	/**
+	 * Non-autoloaded mutex that serializes migration requests.
+	 *
+	 * @since 2.7.0
+	 */
+	public const OPTION_MIGRATION_LOCK = 'ad_placr_unified_migration_lock';
+
+	/**
+	 * Seconds before a lock left by a dead request can be recovered.
+	 *
+	 * @since 2.7.0
+	 */
+	private const MIGRATION_LOCK_TTL = 300;
+
+	/**
 	 * Retained Placement post type used only as a migration source.
 	 *
 	 * @since 2.7.0
@@ -128,15 +142,48 @@ final class Ad_Placr_Migration {
 	/**
 	 * Persist every required source as one complete unified Ad.
 	 *
-	 * Each successful insert is mapped immediately. A failed insert or map write
-	 * leaves the DB version behind so a later request retries only unmapped data.
-	 * Retained source records and public settings are never changed.
+	 * An atomic option lock prevents concurrent requests from inserting the same
+	 * source. The lock expires after a bounded interval so a crashed request cannot
+	 * deadlock migration permanently.
 	 *
 	 * @since 2.0.0
 	 *
 	 * @return bool True when every required definition is mapped and the DB version is current.
 	 */
 	public static function run(): bool {
+		if ( (int) get_option( self::OPTION_DB_VERSION, 0 ) >= self::DB_VERSION ) {
+			return true;
+		}
+
+		$lock_token = self::acquire_migration_lock();
+		if ( is_wp_error( $lock_token ) ) {
+			return false;
+		}
+
+		try {
+			/*
+			 * Another request may have completed after this request's first version
+			 * read but before it acquired the lock.
+			 */
+			// @phpstan-ignore-next-line The option can change between concurrent requests.
+			if ( (int) get_option( self::OPTION_DB_VERSION, 0 ) >= self::DB_VERSION ) {
+				return true;
+			}
+
+			return self::run_locked();
+		} finally {
+			self::release_migration_lock( $lock_token );
+		}
+	}
+
+	/**
+	 * Migrate all required definitions while the caller owns the option lock.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return bool Whether every required source was persisted and versioned.
+	 */
+	private static function run_locked(): bool {
 		$map = self::load_migration_map();
 		if ( is_wp_error( $map ) ) {
 			return false;
@@ -164,51 +211,23 @@ final class Ad_Placr_Migration {
 					$map = $next_map;
 				}
 
-				$map_key = (string) $placement_id;
-				if ( isset( $map['placements'][ $map_key ] ) ) {
-					continue;
-				}
-
+				$map_key    = (string) $placement_id;
 				$definition = self::build_legacy_placement_ad(
 					$placement,
 					self::read_legacy_source_ads( $links )
 				);
-				$new_id     = self::insert_unified_ad( $definition );
-				if ( is_wp_error( $new_id ) ) {
+				if ( ! self::migrate_definition( $definition, 'placements', $map_key, $map ) ) {
 					return false;
 				}
-
-				$next_map = $map;
-
-				$next_map['placements'][ $map_key ] = $new_id;
-				if ( ! self::save_migration_map( $next_map ) ) {
-					wp_delete_post( $new_id, true );
-					return false;
-				}
-				$map = $next_map;
 			}
 		} else {
 			$definitions = self::build_settings_ads( Ad_Placr_Plugin::get_settings() );
 
 			foreach ( $definitions as $definition ) {
 				$source_key = (string) $definition['source_key'];
-				if ( isset( $map['settings'][ $source_key ] ) ) {
-					continue;
-				}
-
-				$new_id = self::insert_unified_ad( $definition );
-				if ( is_wp_error( $new_id ) ) {
+				if ( ! self::migrate_definition( $definition, 'settings', $source_key, $map ) ) {
 					return false;
 				}
-
-				$next_map = $map;
-
-				$next_map['settings'][ $source_key ] = $new_id;
-				if ( ! self::save_migration_map( $next_map ) ) {
-					wp_delete_post( $new_id, true );
-					return false;
-				}
-				$map = $next_map;
 			}
 		}
 
@@ -360,8 +379,9 @@ final class Ad_Placr_Migration {
 			$code        = isset( $source['code'] ) ? (string) $source['code'] : '';
 			$mobile_code = isset( $source['mobile_code'] ) ? (string) $source['mobile_code'] : '';
 			$source_name = isset( $source['title'] ) ? trim( (string) $source['title'] ) : '';
-			$enabled     = 'active' === strtolower( (string) ( $source['status'] ?? '' ) )
-				&& self::has_creative( $code, $mobile_code );
+			$enabled     = 'publish' === ( $source['post_status'] ?? '' )
+				&& 'active' === strtolower( (string) ( $source['status'] ?? '' ) )
+				&& '' !== trim( $code );
 
 			$versions[] = array(
 				'version_id'  => self::source_version_id( 'ad:' . $source_ad_id ),
@@ -374,7 +394,7 @@ final class Ad_Placr_Migration {
 		}
 
 		$raw_position = isset( $placement['position'] ) ? (string) $placement['position'] : '';
-		$position     = array_key_exists( $raw_position, Ad_Placr_Positions::defaults() ) ? $raw_position : '';
+		$position     = array_key_exists( $raw_position, Ad_Placr_Positions::all() ) ? $raw_position : '';
 		$targeting    = isset( $placement['targeting'] ) && is_array( $placement['targeting'] )
 			? $placement['targeting']
 			: array();
@@ -437,6 +457,141 @@ final class Ad_Placr_Migration {
 		$map = self::normalize_migration_map( get_option( self::OPTION_MIGRATION_MAP, array() ) );
 
 		return $map['source_ad_ids'];
+	}
+
+	/**
+	 * Atomically acquire the migration mutex, recovering locks left by dead requests.
+	 *
+	 * WordPress implements `add_option()` with a unique option-name constraint, so
+	 * only one concurrent request can create the lock. Stale recovery deletes only
+	 * the observed expired lock and then competes through the same atomic add.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return string|WP_Error Opaque ownership token or a contention/storage error.
+	 */
+	private static function acquire_migration_lock(): string|WP_Error {
+		$token = wp_generate_uuid4();
+		$now   = time();
+		$lock  = array(
+			'token'      => $token,
+			'created_at' => $now,
+		);
+
+		if ( self::add_migration_lock_option( $lock ) ) {
+			return $token;
+		}
+
+		$current = get_option( self::OPTION_MIGRATION_LOCK, array() );
+		if ( ! self::is_stale_lock( $current, $now ) ) {
+			return new WP_Error( 'ad_placr_migration_locked', 'Another Ad migration request is already running.' );
+		}
+
+		if ( ! self::delete_observed_migration_lock( $current ) ) {
+			return new WP_Error( 'ad_placr_migration_lock_changed', 'The stale Ad migration lock changed during recovery.' );
+		}
+
+		$token = wp_generate_uuid4() . '-recovered';
+		$lock  = array(
+			'token'      => $token,
+			'created_at' => time(),
+		);
+
+		if ( ! self::add_migration_lock_option( $lock ) ) {
+			return new WP_Error( 'ad_placr_migration_lock_contended', 'Another Ad migration request acquired the recovered lock.' );
+		}
+
+		return $token;
+	}
+
+	/**
+	 * Atomically delete only the stale lock value that this request observed.
+	 *
+	 * A name-only `delete_option()` can erase a fresh replacement inserted between
+	 * the stale read and delete. Matching both option name and serialized value
+	 * turns recovery into compare-and-delete; a changed row remains untouched.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param mixed $observed_lock Exact stale option value that was read.
+	 * @return bool Whether that exact stale row was deleted.
+	 */
+	private static function delete_observed_migration_lock( $observed_lock ): bool {
+		global $wpdb;
+
+		$deleted = $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Options API has no atomic compare-and-delete operation.
+			$wpdb->options,
+			array(
+				'option_name'  => self::OPTION_MIGRATION_LOCK,
+				'option_value' => maybe_serialize( $observed_lock ),
+			),
+			array( '%s', '%s' )
+		);
+
+		if ( 1 !== $deleted ) {
+			return false;
+		}
+
+		/*
+		 * The lock is non-autoloaded, so invalidating its individual option cache
+		 * makes the following atomic add observe the conditional database delete.
+		 */
+		wp_cache_delete( self::OPTION_MIGRATION_LOCK, 'options' );
+
+		return true;
+	}
+
+	/**
+	 * Attempt the atomic non-autoloaded option insert used for lock ownership.
+	 *
+	 * Both first acquisition and post-recovery acquisition must use the identical
+	 * unique-option and autoload contract.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array{token:string,created_at:int} $lock Lock value.
+	 * @return bool Whether this request acquired the unique option name.
+	 */
+	private static function add_migration_lock_option( array $lock ): bool {
+		// @phpstan-ignore-next-line The string form is required for WordPress 6.0 compatibility.
+		return add_option( self::OPTION_MIGRATION_LOCK, $lock, '', 'no' );
+	}
+
+	/**
+	 * Release the mutex only when the current request still owns it.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $token Opaque ownership token returned by acquisition.
+	 * @return void
+	 */
+	private static function release_migration_lock( string $token ): void {
+		$current = get_option( self::OPTION_MIGRATION_LOCK, array() );
+		if ( ! is_array( $current ) || (string) ( $current['token'] ?? '' ) !== $token ) {
+			return;
+		}
+
+		delete_option( self::OPTION_MIGRATION_LOCK );
+	}
+
+	/**
+	 * Whether a stored lock is malformed or older than the recovery window.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param mixed $raw Stored lock value.
+	 * @param int   $now Current Unix timestamp.
+	 * @return bool
+	 */
+	private static function is_stale_lock( $raw, int $now ): bool {
+		if ( ! is_array( $raw ) ) {
+			return true;
+		}
+
+		$token      = (string) ( $raw['token'] ?? '' );
+		$created_at = (int) ( $raw['created_at'] ?? 0 );
+
+		return '' === $token || $created_at < 1 || $created_at > $now || ( $now - $created_at ) >= self::MIGRATION_LOCK_TTL;
 	}
 
 	/**
@@ -669,6 +824,7 @@ final class Ad_Placr_Migration {
 
 			$source_ads[ $source_id ] = array(
 				'title'       => (string) $post->post_title,
+				'post_status' => (string) $post->post_status,
 				'code'        => (string) get_post_meta( $source_id, self::LEGACY_META_CODE, true ),
 				'mobile_code' => (string) get_post_meta( $source_id, self::LEGACY_META_MOBILE_CODE, true ),
 				'status'      => (string) get_post_meta( $source_id, self::LEGACY_META_STATUS, true ),
@@ -679,32 +835,127 @@ final class Ad_Placr_Migration {
 	}
 
 	/**
-	 * Insert one complete unified Ad and all four unified meta values.
+	 * Map and persist one source definition without creating retry duplicates.
 	 *
-	 * A metadata failure removes only the incomplete new destination post. Source
-	 * records remain untouched, and the absent map entry makes the source retryable.
+	 * The destination post is mapped before metadata is written. If metadata or
+	 * final status persistence fails, the mapped draft is repaired on the next run.
+	 * A deterministic post slug recovers the narrower case where map persistence
+	 * and cleanup both fail, without adding non-unified migration metadata.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<string, mixed>                                                               $definition Complete unified Ad definition.
+	 * @param string                                                                             $section    `settings` or `placements`.
+	 * @param string                                                                             $map_key    Source key within the section.
+	 * @param array{settings:array<string,int>,placements:array<string,int>,source_ad_ids:int[]} $map        Source map, updated on success.
+	 * @return bool Whether the destination is mapped and completely persisted.
+	 */
+	private static function migrate_definition( array $definition, string $section, string $map_key, array &$map ): bool {
+		if ( ! in_array( $section, array( 'settings', 'placements' ), true ) ) {
+			return false;
+		}
+
+		$post_id = isset( $map[ $section ][ $map_key ] ) ? (int) $map[ $section ][ $map_key ] : 0;
+		$created = false;
+
+		if ( $post_id < 1 ) {
+			$post_id = self::find_recoverable_destination( (string) $definition['source_key'] );
+
+			if ( $post_id < 1 ) {
+				$inserted = self::insert_destination_stub( $definition );
+				if ( is_wp_error( $inserted ) ) {
+					return false;
+				}
+
+				$post_id = $inserted;
+				$created = true;
+			}
+
+			$next_map                         = $map;
+			$next_map[ $section ][ $map_key ] = $post_id;
+			if ( ! self::save_migration_map( $next_map ) ) {
+				/*
+				 * A failed cleanup is recoverable: the draft keeps its deterministic
+				 * source slug, so the next locked request maps it instead of inserting.
+				 */
+				if ( $created ) {
+					$deleted = wp_delete_post( $post_id, true );
+					if ( ! $deleted instanceof WP_Post ) {
+						return false;
+					}
+				}
+				return false;
+			}
+
+			$map = $next_map;
+		}
+
+		return ! is_wp_error( self::persist_unified_ad( $post_id, $definition ) );
+	}
+
+	/**
+	 * Find an unmapped draft left after both map persistence and cleanup failed.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $source_key Stable source key.
+	 * @return int Recoverable destination ID, or zero when none exists.
+	 */
+	private static function find_recoverable_destination( string $source_key ): int {
+		$post = get_page_by_path( self::source_post_slug( $source_key ), 'OBJECT', Ad_Placr_Ad::POST_TYPE );
+
+		return $post instanceof WP_Post && Ad_Placr_Ad::POST_TYPE === $post->post_type
+			? (int) $post->ID
+			: 0;
+	}
+
+	/**
+	 * Derive the stable destination slug used only for orphan recovery.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $source_key Stable source key.
+	 * @return string Deterministic destination slug.
+	 */
+	private static function source_post_slug( string $source_key ): string {
+		return 'ad-placr-migrated-' . substr( md5( 'ad-placr-source:' . $source_key ), 0, 20 );
+	}
+
+	/**
+	 * Insert a Paused destination shell before recording its source mapping.
 	 *
 	 * @since 2.7.0
 	 *
 	 * @param array<string, mixed> $definition Complete unified Ad definition.
-	 * @return int|WP_Error New unified Ad ID or persistence failure.
+	 * @return int|WP_Error New destination ID or insertion failure.
 	 */
-	private static function insert_unified_ad( array $definition ): int|WP_Error {
-		$post_id = wp_insert_post(
+	private static function insert_destination_stub( array $definition ): int|WP_Error {
+		return wp_insert_post(
 			array(
 				'post_type'   => Ad_Placr_Ad::POST_TYPE,
-				'post_status' => 'publish' === ( $definition['post_status'] ?? '' ) ? 'publish' : 'draft',
+				'post_status' => 'draft',
 				'post_title'  => wp_slash( (string) ( $definition['title'] ?? 'Migrated Ad' ) ),
+				'post_name'   => self::source_post_slug( (string) $definition['source_key'] ),
 			),
 			true
 		);
+	}
 
-		if ( is_wp_error( $post_id ) ) {
-			return $post_id;
-		}
-
-		$post_id = (int) $post_id;
-
+	/**
+	 * Persist unified metadata losslessly, then apply the effective final status.
+	 *
+	 * WordPress strips one slash layer before storing post meta. Slashing complete
+	 * arrays here preserves JavaScript regexes, targeting paths, and notes exactly.
+	 * A `false` meta result is accepted only when a read-back proves the requested
+	 * unslashed value already exists.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param int                  $post_id    Mapped destination Ad ID.
+	 * @param array<string, mixed> $definition Complete unified Ad definition.
+	 * @return int|WP_Error Destination ID or persistence failure.
+	 */
+	private static function persist_unified_ad( int $post_id, array $definition ): int|WP_Error {
 		$meta = array(
 			Ad_Placr_Ad::META_POSITION  => (string) ( $definition['position'] ?? '' ),
 			Ad_Placr_Ad::META_TARGETING => isset( $definition['targeting'] ) && is_array( $definition['targeting'] )
@@ -717,14 +968,20 @@ final class Ad_Placr_Migration {
 		);
 
 		foreach ( $meta as $meta_key => $meta_value ) {
-			if ( false === update_post_meta( $post_id, $meta_key, $meta_value ) ) {
-				wp_delete_post( $post_id, true );
-
+			$result = update_post_meta( $post_id, $meta_key, wp_slash( $meta_value ) );
+			if ( false === $result && get_post_meta( $post_id, $meta_key, true ) !== $meta_value ) {
 				return new WP_Error( 'ad_placr_migration_meta_failed', 'The unified Ad metadata could not be saved.' );
 			}
 		}
 
-		return $post_id;
+		return wp_update_post(
+			array(
+				'ID'          => $post_id,
+				'post_status' => 'publish' === ( $definition['post_status'] ?? '' ) ? 'publish' : 'draft',
+				'post_title'  => wp_slash( (string) ( $definition['title'] ?? 'Migrated Ad' ) ),
+			),
+			true
+		);
 	}
 
 	/**
