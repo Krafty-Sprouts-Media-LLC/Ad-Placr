@@ -148,6 +148,15 @@ if ( ! class_exists( 'wpdb' ) ) {
 		public $delete_callback;
 
 		/**
+		 * Test callback that implements a unique option-row insert.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @var callable
+		 */
+		public $insert_callback;
+
+		/**
 		 * Delete one row through the configured test callback.
 		 *
 		 * @since 2.7.0
@@ -159,6 +168,20 @@ if ( ! class_exists( 'wpdb' ) ) {
 		 */
 		public function delete( string $table, array $where, array $where_format ) {
 			return ( $this->delete_callback )( $table, $where, $where_format );
+		}
+
+		/**
+		 * Insert one row through the configured test callback.
+		 *
+		 * @since 2.7.0
+		 *
+		 * @param string               $table  Table name.
+		 * @param array<string, mixed> $data   Column values.
+		 * @param string[]             $format Column formats.
+		 * @return int|false
+		 */
+		public function insert( string $table, array $data, array $format ) {
+			return ( $this->insert_callback )( $table, $data, $format );
 		}
 	}
 }
@@ -202,9 +225,11 @@ final class MigrationBuilderTest extends TestCase {
 			'next_post_id'              => 100,
 			'insert_calls'              => 0,
 			'add_option_calls'          => array(),
+			'atomic_lock_inserts'       => array(),
 			'delete_option_calls'       => array(),
 			'conditional_lock_deletes'  => 0,
 			'replace_lock_before_delete' => false,
+			'cache_deletes'             => array(),
 			'deleted_posts'             => array(),
 			'filtered_positions'        => null,
 			'fail_update_option_once'   => array(),
@@ -213,6 +238,25 @@ final class MigrationBuilderTest extends TestCase {
 		);
 
 		$wpdb                  = new wpdb();
+		$wpdb->insert_callback = function ( string $table, array $data, array $format ) {
+			unset( $format );
+			if ( 'wp_options' !== $table || Ad_Placr_Migration::OPTION_MIGRATION_LOCK !== ( $data['option_name'] ?? '' ) ) {
+				return false;
+			}
+
+			$this->wp['atomic_lock_inserts'][] = $data;
+			$name = (string) $data['option_name'];
+			if ( array_key_exists( $name, $this->wp['options'] ) ) {
+				return false;
+			}
+
+			$serialized = (string) ( $data['option_value'] ?? '' );
+			$value      = @unserialize( $serialized );
+			$this->wp['options'][ $name ]         = false === $value ? $serialized : $value;
+			$this->wp['option_autoload'][ $name ] = $data['autoload'] ?? null;
+
+			return 1;
+		};
 		$wpdb->delete_callback = function ( string $table, array $where, array $where_format ) {
 			unset( $where_format );
 			if ( 'wp_options' !== $table || Ad_Placr_Migration::OPTION_MIGRATION_LOCK !== ( $where['option_name'] ?? '' ) ) {
@@ -467,7 +511,12 @@ final class MigrationBuilderTest extends TestCase {
 		Functions\when( 'maybe_serialize' )->alias(
 			static fn( $value ) => is_array( $value ) || is_object( $value ) ? serialize( $value ) : $value
 		);
-		Functions\when( 'wp_cache_delete' )->justReturn( true );
+		Functions\when( 'wp_cache_delete' )->alias(
+			function ( string $key, string $group = '' ): bool {
+				$this->wp['cache_deletes'][] = array( $key, $group );
+				return true;
+			}
+		);
 		Functions\when( 'is_wp_error' )->alias( static fn( $value ): bool => $value instanceof WP_Error );
 		Functions\when( 'wp_parse_args' )->alias(
 			static function ( $args, array $defaults = array() ): array {
@@ -725,13 +774,13 @@ final class MigrationBuilderTest extends TestCase {
 	}
 
 	/**
-	 * A mobile override cannot make an empty universal source Ad eligible.
+	 * A mobile-only creative is eligible when the source post and status are active.
 	 *
 	 * @since 2.7.0
 	 *
 	 * @return void
 	 */
-	public function test_mobile_only_source_ads_produce_disabled_versions(): void {
+	public function test_mobile_only_source_ads_produce_enabled_versions(): void {
 		$definition = Ad_Placr_Migration::build_legacy_placement_ad(
 			array(
 				'id'          => 90,
@@ -747,8 +796,8 @@ final class MigrationBuilderTest extends TestCase {
 			)
 		);
 
-		$this->assertFalse( $definition['versions'][0]['enabled'] );
-		$this->assertSame( 'draft', $definition['post_status'] );
+		$this->assertTrue( $definition['versions'][0]['enabled'] );
+		$this->assertSame( 'publish', $definition['post_status'] );
 	}
 
 	/**
@@ -902,18 +951,25 @@ final class MigrationBuilderTest extends TestCase {
 		$this->assertTrue( Ad_Placr_Migration::run() );
 		$this->assertSame( 1, $this->wp['insert_calls'] );
 		$this->assertArrayNotHasKey( Ad_Placr_Migration::OPTION_MIGRATION_LOCK, $this->wp['options'] );
-		$lock_creations = array_values(
+		$legacy_lock_creations = array_values(
 			array_filter(
 				$this->wp['add_option_calls'],
 				static fn( array $call ): bool => Ad_Placr_Migration::OPTION_MIGRATION_LOCK === $call[0]
 			)
 		);
-		$this->assertSame( 'no', $lock_creations[0][3] );
+		$this->assertSame( array(), $legacy_lock_creations );
+		$this->assertCount( 1, $this->wp['atomic_lock_inserts'] );
+		$this->assertSame( 'no', $this->wp['atomic_lock_inserts'][0]['autoload'] );
+		$this->assertContains(
+			array( Ad_Placr_Migration::OPTION_MIGRATION_LOCK, 'options' ),
+			$this->wp['cache_deletes']
+		);
+		$this->assertContains( array( 'notoptions', 'options' ), $this->wp['cache_deletes'] );
 
-		$option_calls = count( $this->wp['add_option_calls'] );
+		$lock_inserts = count( $this->wp['atomic_lock_inserts'] );
 		$this->assertTrue( Ad_Placr_Migration::run() );
 		$this->assertSame( 1, $this->wp['insert_calls'] );
-		$this->assertSame( $option_calls, count( $this->wp['add_option_calls'] ) );
+		$this->assertSame( $lock_inserts, count( $this->wp['atomic_lock_inserts'] ) );
 		$this->assertSame( Ad_Placr_Migration::DB_VERSION, $this->wp['options'][ Ad_Placr_Migration::OPTION_DB_VERSION ] );
 	}
 
@@ -937,6 +993,7 @@ final class MigrationBuilderTest extends TestCase {
 			'another-request',
 			$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_LOCK ]['token']
 		);
+		$this->assertCount( 1, $this->wp['atomic_lock_inserts'] );
 		$this->assertArrayNotHasKey( Ad_Placr_Migration::OPTION_DB_VERSION, $this->wp['options'] );
 	}
 
@@ -954,7 +1011,7 @@ final class MigrationBuilderTest extends TestCase {
 		);
 
 		$this->assertTrue( Ad_Placr_Migration::run() );
-		$this->assertSame( 1, $this->wp['conditional_lock_deletes'] );
+		$this->assertSame( 2, $this->wp['conditional_lock_deletes'] );
 		$this->assertArrayNotHasKey( Ad_Placr_Migration::OPTION_MIGRATION_LOCK, $this->wp['options'] );
 		$this->assertSame( Ad_Placr_Migration::DB_VERSION, $this->wp['options'][ Ad_Placr_Migration::OPTION_DB_VERSION ] );
 	}
@@ -983,21 +1040,39 @@ final class MigrationBuilderTest extends TestCase {
 	}
 
 	/**
-	 * A metadata failure keeps its mapped draft and retries the same destination.
+	 * Lock release never deletes a replacement installed after its ownership read.
 	 *
 	 * @since 2.7.0
 	 *
 	 * @return void
 	 */
-	public function test_meta_failure_retries_the_same_mapped_destination(): void {
+	public function test_release_does_not_delete_a_replacement_lock(): void {
+		$this->wp['replace_lock_before_delete'] = true;
+
+		$this->assertTrue( Ad_Placr_Migration::run() );
+		$this->assertSame(
+			'replacement-request',
+			$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_LOCK ]['token']
+		);
+		$this->assertSame( 1, $this->wp['conditional_lock_deletes'] );
+	}
+
+	/**
+	 * A metadata failure remains unmapped and retries the same destination stub.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_meta_failure_remains_unmapped_and_retries_the_same_destination(): void {
 		$this->seed_legacy_migration();
 		$this->wp['fail_update_post_meta_once'][ Ad_Placr_Ad::META_VERSIONS ] = 1;
 
 		$this->assertFalse( Ad_Placr_Migration::run() );
 
-		$map    = $this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ];
-		$this->assertArrayHasKey( '90', $map['placements'] );
-		$new_id = $map['placements']['90'];
+		$map = $this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ];
+		$this->assertArrayNotHasKey( '90', $map['placements'] );
+		$new_id = $this->destination_ids()[0];
 		$this->assertSame( 'draft', $this->wp['posts'][ $new_id ]->post_status );
 		$this->assertSame( 1, $this->wp['insert_calls'] );
 		$this->assertArrayNotHasKey( Ad_Placr_Migration::OPTION_DB_VERSION, $this->wp['options'] );
@@ -1006,6 +1081,7 @@ final class MigrationBuilderTest extends TestCase {
 		$this->assertTrue( Ad_Placr_Migration::run() );
 		$this->assertSame( 1, $this->wp['insert_calls'] );
 		$this->assertSame( 'publish', $this->wp['posts'][ $new_id ]->post_status );
+		$this->assertSame( $new_id, $this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ]['placements']['90'] );
 	}
 
 	/**
@@ -1030,6 +1106,12 @@ final class MigrationBuilderTest extends TestCase {
 		$this->assertSame( 1, $this->wp['insert_calls'] );
 		$this->assertSame( array(), $this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ]['placements'] );
 		$this->assertCount( 1, $this->destination_ids() );
+		$orphan_id = $this->destination_ids()[0];
+		$this->assertSame( 'publish', $this->wp['posts'][ $orphan_id ]->post_status );
+		$this->assertSame(
+			'after_header',
+			$this->wp['meta'][ $orphan_id ][ Ad_Placr_Ad::META_POSITION ]
+		);
 
 		$this->assertTrue( Ad_Placr_Migration::run() );
 		$this->assertSame( 1, $this->wp['insert_calls'] );

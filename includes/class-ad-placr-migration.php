@@ -381,7 +381,7 @@ final class Ad_Placr_Migration {
 			$source_name = isset( $source['title'] ) ? trim( (string) $source['title'] ) : '';
 			$enabled     = 'publish' === ( $source['post_status'] ?? '' )
 				&& 'active' === strtolower( (string) ( $source['status'] ?? '' ) )
-				&& '' !== trim( $code );
+				&& self::has_creative( $code, $mobile_code );
 
 			$versions[] = array(
 				'version_id'  => self::source_version_id( 'ad:' . $source_ad_id ),
@@ -462,9 +462,9 @@ final class Ad_Placr_Migration {
 	/**
 	 * Atomically acquire the migration mutex, recovering locks left by dead requests.
 	 *
-	 * WordPress implements `add_option()` with a unique option-name constraint, so
-	 * only one concurrent request can create the lock. Stale recovery deletes only
-	 * the observed expired lock and then competes through the same atomic add.
+	 * A direct insert relies on the options table's unique option-name constraint,
+	 * so only one concurrent request can create the lock. Stale recovery deletes
+	 * only the observed expired lock and then competes through the same insert.
 	 *
 	 * @since 2.7.0
 	 *
@@ -478,7 +478,7 @@ final class Ad_Placr_Migration {
 			'created_at' => $now,
 		);
 
-		if ( self::add_migration_lock_option( $lock ) ) {
+		if ( self::insert_migration_lock( $lock ) ) {
 			return $token;
 		}
 
@@ -497,7 +497,7 @@ final class Ad_Placr_Migration {
 			'created_at' => time(),
 		);
 
-		if ( ! self::add_migration_lock_option( $lock ) ) {
+		if ( ! self::insert_migration_lock( $lock ) ) {
 			return new WP_Error( 'ad_placr_migration_lock_contended', 'Another Ad migration request acquired the recovered lock.' );
 		}
 
@@ -505,16 +505,17 @@ final class Ad_Placr_Migration {
 	}
 
 	/**
-	 * Atomically delete only the stale lock value that this request observed.
+	 * Atomically delete only the lock value that this request observed.
 	 *
 	 * A name-only `delete_option()` can erase a fresh replacement inserted between
-	 * the stale read and delete. Matching both option name and serialized value
-	 * turns recovery into compare-and-delete; a changed row remains untouched.
+	 * any ownership read and delete. Matching both option name and serialized value
+	 * makes recovery and release compare-and-delete operations; a changed row
+	 * remains untouched.
 	 *
 	 * @since 2.7.0
 	 *
-	 * @param mixed $observed_lock Exact stale option value that was read.
-	 * @return bool Whether that exact stale row was deleted.
+	 * @param mixed $observed_lock Exact option value that was read.
+	 * @return bool Whether that exact row was deleted.
 	 */
 	private static function delete_observed_migration_lock( $observed_lock ): bool {
 		global $wpdb;
@@ -542,19 +543,38 @@ final class Ad_Placr_Migration {
 	}
 
 	/**
-	 * Attempt the atomic non-autoloaded option insert used for lock ownership.
+	 * Attempt the atomic non-autoloaded database insert used for lock ownership.
 	 *
-	 * Both first acquisition and post-recovery acquisition must use the identical
-	 * unique-option and autoload contract.
+	 * Core `add_option()` may update an existing row after its preliminary cache
+	 * check, so it cannot provide mutex semantics. A plain insert either creates
+	 * the unique option row or loses cleanly to an existing owner.
 	 *
 	 * @since 2.7.0
 	 *
 	 * @param array{token:string,created_at:int} $lock Lock value.
 	 * @return bool Whether this request acquired the unique option name.
 	 */
-	private static function add_migration_lock_option( array $lock ): bool {
-		// @phpstan-ignore-next-line The string form is required for WordPress 6.0 compatibility.
-		return add_option( self::OPTION_MIGRATION_LOCK, $lock, '', 'no' );
+	private static function insert_migration_lock( array $lock ): bool {
+		global $wpdb;
+
+		$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- A conditional unique-row insert is the mutex primitive.
+			$wpdb->options,
+			array(
+				'option_name'  => self::OPTION_MIGRATION_LOCK,
+				'option_value' => maybe_serialize( $lock ),
+				'autoload'     => 'no',
+			),
+			array( '%s', '%s', '%s' )
+		);
+
+		/*
+		 * Direct database writes bypass the Options API's cache maintenance. Clear
+		 * both the individual value and the remembered-missing-options collection.
+		 */
+		wp_cache_delete( self::OPTION_MIGRATION_LOCK, 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+
+		return 1 === $inserted;
 	}
 
 	/**
@@ -571,7 +591,7 @@ final class Ad_Placr_Migration {
 			return;
 		}
 
-		delete_option( self::OPTION_MIGRATION_LOCK );
+		self::delete_observed_migration_lock( $current );
 	}
 
 	/**
@@ -835,12 +855,12 @@ final class Ad_Placr_Migration {
 	}
 
 	/**
-	 * Map and persist one source definition without creating retry duplicates.
+	 * Persist and map one source definition without creating retry duplicates.
 	 *
-	 * The destination post is mapped before metadata is written. If metadata or
-	 * final status persistence fails, the mapped draft is repaired on the next run.
-	 * A deterministic post slug recovers the narrower case where map persistence
-	 * and cleanup both fail, without adding non-unified migration metadata.
+	 * Unified metadata and final status must succeed before the source map becomes
+	 * authoritative. A deterministic post slug lets a retry reuse an unmapped stub
+	 * after persistence failure, or an orphan whose cleanup failed after a map
+	 * write error, without adding non-unified migration metadata.
 	 *
 	 * @since 2.7.0
 	 *
@@ -855,10 +875,10 @@ final class Ad_Placr_Migration {
 			return false;
 		}
 
-		$post_id = isset( $map[ $section ][ $map_key ] ) ? (int) $map[ $section ][ $map_key ] : 0;
-		$created = false;
+		$post_id   = isset( $map[ $section ][ $map_key ] ) ? (int) $map[ $section ][ $map_key ] : 0;
+		$is_mapped = $post_id > 0;
 
-		if ( $post_id < 1 ) {
+		if ( ! $is_mapped ) {
 			$post_id = self::find_recoverable_destination( (string) $definition['source_key'] );
 
 			if ( $post_id < 1 ) {
@@ -868,33 +888,35 @@ final class Ad_Placr_Migration {
 				}
 
 				$post_id = $inserted;
-				$created = true;
 			}
-
-			$next_map                         = $map;
-			$next_map[ $section ][ $map_key ] = $post_id;
-			if ( ! self::save_migration_map( $next_map ) ) {
-				/*
-				 * A failed cleanup is recoverable: the draft keeps its deterministic
-				 * source slug, so the next locked request maps it instead of inserting.
-				 */
-				if ( $created ) {
-					$deleted = wp_delete_post( $post_id, true );
-					if ( ! $deleted instanceof WP_Post ) {
-						return false;
-					}
-				}
-				return false;
-			}
-
-			$map = $next_map;
 		}
 
-		return ! is_wp_error( self::persist_unified_ad( $post_id, $definition ) );
+		if ( is_wp_error( self::persist_unified_ad( $post_id, $definition ) ) ) {
+			return false;
+		}
+
+		if ( $is_mapped ) {
+			return true;
+		}
+
+		$next_map                         = $map;
+		$next_map[ $section ][ $map_key ] = $post_id;
+		if ( ! self::save_migration_map( $next_map ) ) {
+			/*
+			 * Cleanup is best-effort. If it fails, the stable source slug lets the
+			 * next locked request reuse this complete but unmapped destination.
+			 */
+			wp_delete_post( $post_id, true );
+			return false;
+		}
+
+		$map = $next_map;
+
+		return true;
 	}
 
 	/**
-	 * Find an unmapped draft left after both map persistence and cleanup failed.
+	 * Find an unmapped destination left by persistence or cleanup failure.
 	 *
 	 * @since 2.7.0
 	 *
@@ -922,7 +944,7 @@ final class Ad_Placr_Migration {
 	}
 
 	/**
-	 * Insert a Paused destination shell before recording its source mapping.
+	 * Insert a Paused destination shell before persisting unified data.
 	 *
 	 * @since 2.7.0
 	 *
