@@ -1,0 +1,163 @@
+.ad-placr-editor-section,
+.ad-placr-rules-grid,
+.ad-placr-version-grid {
+	display: grid;
+	gap: 24px;
+}
+
+.ad-placr-editor-section {
+	max-width: 960px;
+}
+
+.ad-placr-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+}
+
+.ad-placr-field .description {
+	margin: 0;
+	max-width: 42rem;
+}
+
+.ad-placr-location-control {
+	padding: 16px;
+	background: #f6f7f7;
+	border-left: 4px solid var(--wp-admin-theme-color, #2271b1);
+}
+
+.ad-placr-location-control[hidden] {
+	display: none;
+}
+
+.ad-placr-version {
+	padding: 24px 0;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.ad-placr-version:first-child {
+	padding-top: 8px;
+}
+
+.ad-placr-version:last-child {
+	border-bottom: 0;
+}
+
+.ad-placr-version-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+	font-size: 16px;
+	line-height: 1.4;
+}
+
+.ad-placr-version-grid {
+	gap: 24px 32px;
+}
+
+.ad-placr-version-code {
+	grid-column: span 2;
+}
+
+.ad-placr-weight-control {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.ad-placr-weight-control input {
+	width: 88px;
+}
+
+.ad-placr-weight-control output {
+	font-weight: 600;
+	color: #50575e;
+}
+
+.ad-placr-versions[data-multiple="0"] .ad-placr-version-advanced {
+	display: none;
+}
+
+.ad-placr-rules {
+	margin-top: 16px;
+}
+
+.ad-placr-rules > summary {
+	display: inline-block;
+	cursor: pointer;
+	color: var(--wp-admin-theme-color, #2271b1);
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.ad-placr-rules-grid {
+	margin-top: 24px;
+}
+
+.ad-placr-check {
+	display: block;
+	margin: 4px 0;
+}
+
+.ad-placr-notes {
+	margin-top: 32px;
+}
+
+.ad-placr-stat-summary {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(120px, 1fr));
+	gap: 16px;
+	max-width: 720px;
+	margin-bottom: 24px;
+}
+
+.ad-placr-stat-summary > div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 16px;
+	background: #f6f7f7;
+}
+
+.ad-placr-stat-summary span {
+	color: #50575e;
+}
+
+.ad-placr-stat-summary strong {
+	font-size: 24px;
+	line-height: 1.2;
+	color: #1d2327;
+}
+
+.ad-placr-version-stats {
+	margin-top: 24px;
+}
+
+.ad-placr-editor-section :focus-visible,
+.ad-placr-versions :focus-visible,
+.ad-placr-rules :focus-visible {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+@media screen and (min-width: 783px) {
+	.ad-placr-version-grid,
+	.ad-placr-rules-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.ad-placr-version-code {
+		grid-column: auto;
+	}
+
+	.ad-placr-stat-summary {
+		grid-template-columns: 1fr;
+	}
+}

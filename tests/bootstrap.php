@@ -52,6 +52,53 @@ if ( ! function_exists( 'absint' ) ) {
 	}
 }
 
+if ( ! function_exists( '__' ) ) {
+	/**
+	 * Return translated source text unchanged in unit tests.
+	 *
+	 * @param string $text Source text.
+	 * @return string
+	 */
+	function __( $text ) {
+		return (string) $text;
+	}
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	/**
+	 * Minimal plain-text sanitizer for unit tests.
+	 *
+	 * @param mixed $text Raw text.
+	 * @return string
+	 */
+	function sanitize_text_field( $text ) {
+		return trim( strip_tags( (string) $text ) );
+	}
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+	/**
+	 * Minimal safe-markup sanitizer for unit tests.
+	 *
+	 * @param mixed $text Raw markup.
+	 * @return string
+	 */
+	function wp_kses_post( $text ) {
+		return strip_tags( (string) $text, '<ins>' );
+	}
+}
+
+if ( ! function_exists( 'wp_generate_uuid4' ) ) {
+	/**
+	 * Stable-shape UUID generator for tests that do not inject a seam.
+	 *
+	 * @return string
+	 */
+	function wp_generate_uuid4() {
+		return '00000000-0000-4000-8000-000000000001';
+	}
+}
+
 if ( ! class_exists( 'WP_Widget' ) ) {
 	/**
 	 * Minimal WP_Widget stub so the widget class can load in unit tests.
@@ -101,6 +148,7 @@ require dirname( __DIR__ ) . '/includes/class-ad-placr-frontend.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-targeting.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-shortcode.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-widget.php';
+require dirname( __DIR__ ) . '/includes/class-ad-placr-settings-page.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-admin.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-analytics.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-rest.php';
