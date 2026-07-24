@@ -46,23 +46,41 @@ final class Ad_Placr_Placement {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'          => array(
+				'labels'            => array(
 					'name'          => __( 'Placements', 'ad-placr' ),
 					'singular_name' => __( 'Placement', 'ad-placr' ),
 					'add_new_item'  => __( 'Add New Placement', 'ad-placr' ),
 					'edit_item'     => __( 'Edit Placement', 'ad-placr' ),
 					'menu_name'     => __( 'Placements', 'ad-placr' ),
 				),
-				'public'          => false,
-				'show_ui'         => true,
-				'show_in_menu'    => 'edit.php?post_type=' . Ad_Placr_Ad::POST_TYPE,
-				'show_in_rest'    => false,
-				'supports'        => array( 'title' ),
-				'capability_type' => 'post',
-				'map_meta_cap'    => true,
+				'public'            => false,
+				'show_ui'           => false,
+				'show_in_menu'      => false,
+				'show_in_admin_bar' => false,
+				'show_in_nav_menus' => false,
+				'show_in_rest'      => false,
+				'supports'          => array( 'title' ),
+				'capability_type'   => 'post',
+				'capabilities'      => array(
+					'edit_post'              => 'manage_options',
+					'read_post'              => 'manage_options',
+					'delete_post'            => 'manage_options',
+					'edit_posts'             => 'manage_options',
+					'edit_others_posts'      => 'manage_options',
+					'publish_posts'          => 'manage_options',
+					'read_private_posts'     => 'manage_options',
+					'delete_posts'           => 'manage_options',
+					'delete_private_posts'   => 'manage_options',
+					'delete_published_posts' => 'manage_options',
+					'delete_others_posts'    => 'manage_options',
+					'edit_private_posts'     => 'manage_options',
+					'edit_published_posts'   => 'manage_options',
+					'create_posts'           => 'manage_options',
+					'read'                   => 'manage_options',
+				),
+				'map_meta_cap'      => false,
 			)
 		);
-
 		register_post_meta(
 			self::POST_TYPE,
 			self::META_POSITION,

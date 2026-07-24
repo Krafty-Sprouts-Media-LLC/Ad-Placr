@@ -23,14 +23,14 @@ final class Ad_Placr_Admin {
 	/**
 	 * Nonce action shared by the four editor sections.
 	 *
-	 * @since 2.7.0
+	 * @since 2.4.0
 	 */
 	private const NONCE_ACTION = 'ad_placr_save_ad';
 
 	/**
 	 * Nonce field shared by the four editor sections.
 	 *
-	 * @since 2.7.0
+	 * @since 2.4.0
 	 */
 	private const NONCE_FIELD = 'ad_placr_nonce';
 
