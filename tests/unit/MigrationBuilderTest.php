@@ -224,6 +224,8 @@ final class MigrationBuilderTest extends TestCase {
 			'meta'                      => array(),
 			'next_post_id'              => 100,
 			'insert_calls'              => 0,
+			'update_post_calls'         => array(),
+			'update_post_meta_calls'    => array(),
 			'add_option_calls'          => array(),
 			'atomic_lock_inserts'       => array(),
 			'delete_option_calls'       => array(),
@@ -234,6 +236,7 @@ final class MigrationBuilderTest extends TestCase {
 			'filtered_positions'        => null,
 			'fail_update_option_once'   => array(),
 			'fail_update_post_meta_once' => array(),
+			'fail_update_post_meta_for_post_once' => array(),
 			'fail_delete_post_once'     => false,
 		);
 
@@ -440,6 +443,7 @@ final class MigrationBuilderTest extends TestCase {
 		Functions\when( 'wp_update_post' )->alias(
 			function ( array $values, bool $wp_error = false ) {
 				$post_id = (int) ( $values['ID'] ?? 0 );
+				$this->wp['update_post_calls'][] = $post_id;
 				if ( ! isset( $this->wp['posts'][ $post_id ] ) ) {
 					return $wp_error ? new WP_Error( 'missing_post', 'Missing post.' ) : 0;
 				}
@@ -458,6 +462,12 @@ final class MigrationBuilderTest extends TestCase {
 
 		Functions\when( 'update_post_meta' )->alias(
 			function ( int $post_id, string $meta_key, $meta_value ) {
+				$this->wp['update_post_meta_calls'][] = array( $post_id, $meta_key );
+				if ( ! empty( $this->wp['fail_update_post_meta_for_post_once'][ $post_id ][ $meta_key ] ) ) {
+					--$this->wp['fail_update_post_meta_for_post_once'][ $post_id ][ $meta_key ];
+					return false;
+				}
+
 				if ( ! empty( $this->wp['fail_update_post_meta_once'][ $meta_key ] ) ) {
 					--$this->wp['fail_update_post_meta_once'][ $meta_key ];
 					return false;
@@ -1123,7 +1133,82 @@ final class MigrationBuilderTest extends TestCase {
 	}
 
 	/**
-	 * Identical metadata returning false is verified and accepted as success.
+	 * A retry skips completed mappings and repairs only the unmapped source.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_mapped_source_skips_persistence_while_unmapped_source_retries(): void {
+		$mapped_id   = 100;
+		$unmapped_id = 101;
+
+		$this->wp['next_post_id'] = $unmapped_id;
+		$this->wp['posts'][ $mapped_id ] = new WP_Post(
+			array(
+				'ID'          => $mapped_id,
+				'post_type'   => Ad_Placr_Ad::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Completed destination',
+				'post_name'   => 'completed-destination',
+			)
+		);
+		$this->wp['meta'][ $mapped_id ] = array(
+			Ad_Placr_Ad::META_POSITION  => 'sticky_left_rail',
+			Ad_Placr_Ad::META_TARGETING => array( 'contexts' => array( 'archive' ) ),
+			Ad_Placr_Ad::META_VERSIONS  => array( array( 'code' => '<ins>completed</ins>' ) ),
+			Ad_Placr_Ad::META_NOTES     => 'Do not rewrite',
+		);
+		$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ] = array(
+			'settings'      => array( 'settings:footer_sticky' => $mapped_id ),
+			'placements'    => array(),
+			'source_ad_ids' => array(),
+		);
+		$this->wp['option_autoload'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ] = false;
+		$this->wp['options'][ Ad_Placr_Settings_Page::OPTION_NAME ] = array(
+			'footer_sticky'    => array(
+				'enabled'     => true,
+				'code'        => '<ins>replacement-must-not-run</ins>',
+				'mobile_code' => '',
+			),
+			'in_content_slots' => array(
+				array(
+					'id'              => 'retry-slot',
+					'enabled'         => true,
+					'title'           => 'Retry slot',
+					'paragraph_index' => 2,
+					'position'        => 'after',
+					'post_types'      => array( 'post' ),
+					'code'            => '<ins>retry</ins>',
+					'mobile_code'     => '',
+				),
+			),
+		);
+		$this->wp['fail_update_post_meta_for_post_once'][ $unmapped_id ][ Ad_Placr_Ad::META_VERSIONS ] = 1;
+
+		$this->assertFalse( Ad_Placr_Migration::run() );
+		$this->assertSame( 1, $this->wp['insert_calls'] );
+		$this->assertSame( array(), $this->calls_for_post( $this->wp['update_post_meta_calls'], $mapped_id ) );
+		$this->assertNotContains( $mapped_id, $this->wp['update_post_calls'] );
+		$this->assertSame( 'Do not rewrite', $this->wp['meta'][ $mapped_id ][ Ad_Placr_Ad::META_NOTES ] );
+		$this->assertArrayNotHasKey(
+			'settings:in_content:retry-slot',
+			$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ]['settings']
+		);
+
+		$this->assertTrue( Ad_Placr_Migration::run() );
+		$this->assertSame( 1, $this->wp['insert_calls'] );
+		$this->assertSame( array(), $this->calls_for_post( $this->wp['update_post_meta_calls'], $mapped_id ) );
+		$this->assertNotContains( $mapped_id, $this->wp['update_post_calls'] );
+		$this->assertSame(
+			$unmapped_id,
+			$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ]['settings']['settings:in_content:retry-slot']
+		);
+		$this->assertSame( 'publish', $this->wp['posts'][ $unmapped_id ]->post_status );
+	}
+
+	/**
+	 * Identical metadata on an unmapped recovered stub is accepted as success.
 	 *
 	 * @since 2.7.0
 	 *
@@ -1144,7 +1229,7 @@ final class MigrationBuilderTest extends TestCase {
 				'post_type'   => Ad_Placr_Ad::POST_TYPE,
 				'post_status' => 'draft',
 				'post_title'  => $definition['title'],
-				'post_name'   => '',
+				'post_name'   => 'ad-placr-migrated-' . substr( md5( 'ad-placr-source:placement:90' ), 0, 20 ),
 			)
 		);
 		$this->wp['meta'][ $new_id ] = array(
@@ -1155,7 +1240,7 @@ final class MigrationBuilderTest extends TestCase {
 		);
 		$this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ] = array(
 			'settings'      => array(),
-			'placements'    => array( '90' => $new_id ),
+			'placements'    => array(),
 			'source_ad_ids' => array( 10 ),
 		);
 		$this->wp['option_autoload'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ] = false;
@@ -1163,6 +1248,7 @@ final class MigrationBuilderTest extends TestCase {
 		$this->assertTrue( Ad_Placr_Migration::run() );
 		$this->assertSame( 0, $this->wp['insert_calls'] );
 		$this->assertSame( 'publish', $this->wp['posts'][ $new_id ]->post_status );
+		$this->assertSame( $new_id, $this->wp['options'][ Ad_Placr_Migration::OPTION_MIGRATION_MAP ]['placements']['90'] );
 		$this->assertArrayNotHasKey( $new_id, array_flip( $this->wp['deleted_posts'] ) );
 	}
 
@@ -1261,6 +1347,24 @@ final class MigrationBuilderTest extends TestCase {
 				'mobile_code' => '',
 				'status'      => 'active',
 			),
+		);
+	}
+
+	/**
+	 * Filter recorded metadata calls to one destination post.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array<int, array{0:int,1:string}> $calls   Recorded metadata calls.
+	 * @param int                               $post_id Destination post ID.
+	 * @return array<int, array{0:int,1:string}>
+	 */
+	private function calls_for_post( array $calls, int $post_id ): array {
+		return array_values(
+			array_filter(
+				$calls,
+				static fn( array $call ): bool => $post_id === $call[0]
+			)
 		);
 	}
 

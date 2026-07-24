@@ -875,28 +875,24 @@ final class Ad_Placr_Migration {
 			return false;
 		}
 
-		$post_id   = isset( $map[ $section ][ $map_key ] ) ? (int) $map[ $section ][ $map_key ] : 0;
-		$is_mapped = $post_id > 0;
+		$post_id = isset( $map[ $section ][ $map_key ] ) ? (int) $map[ $section ][ $map_key ] : 0;
+		if ( $post_id > 0 ) {
+			return true;
+		}
 
-		if ( ! $is_mapped ) {
-			$post_id = self::find_recoverable_destination( (string) $definition['source_key'] );
+		$post_id = self::find_recoverable_destination( (string) $definition['source_key'] );
 
-			if ( $post_id < 1 ) {
-				$inserted = self::insert_destination_stub( $definition );
-				if ( is_wp_error( $inserted ) ) {
-					return false;
-				}
-
-				$post_id = $inserted;
+		if ( $post_id < 1 ) {
+			$inserted = self::insert_destination_stub( $definition );
+			if ( is_wp_error( $inserted ) ) {
+				return false;
 			}
+
+			$post_id = $inserted;
 		}
 
 		if ( is_wp_error( self::persist_unified_ad( $post_id, $definition ) ) ) {
 			return false;
-		}
-
-		if ( $is_mapped ) {
-			return true;
 		}
 
 		$next_map                         = $map;
