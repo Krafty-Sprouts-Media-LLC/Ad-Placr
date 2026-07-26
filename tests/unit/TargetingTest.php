@@ -273,15 +273,4 @@ final class TargetingTest extends TestCase {
 		$this->assertTrue( Ad_Placr_Targeting::should_display( 42, $ctx ) );
 	}
 
-	/**
-	 * Legacy status normalization remains on the unified Ad transition API.
-	 *
-	 * @since 2.7.0
-	 *
-	 * @return void
-	 */
-	public function test_unified_ad_normalizes_legacy_status_during_the_transition(): void {
-		$this->assertSame( 'inactive', Ad_Placr_Ad::normalize_status( '' ) );
-		$this->assertSame( 'active', Ad_Placr_Ad::normalize_status( 'ACTIVE' ) );
-	}
 }

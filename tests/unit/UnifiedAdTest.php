@@ -166,19 +166,4 @@ final class UnifiedAdTest extends TestCase {
 		$this->assertNull( Ad_Placr_Ad::choose_weighted_version( array(), 0 ) );
 	}
 
-	/**
-	 * Keep the legacy API loadable until the staged consumer migration completes.
-	 *
-	 * @since 2.7.0
-	 *
-	 * @return void
-	 */
-	public function test_legacy_shims_remain_available_during_the_staged_migration(): void {
-		$this->assertSame( '_ad_placr_code', Ad_Placr_Ad::META_CODE );
-		$this->assertSame( '_ad_placr_mobile_code', Ad_Placr_Ad::META_MOBILE_CODE );
-		$this->assertSame( '_ad_placr_status', Ad_Placr_Ad::META_STATUS );
-		$this->assertSame( 'active', Ad_Placr_Ad::normalize_status( 'ACTIVE' ) );
-		$this->assertTrue( is_callable( array( Ad_Placr_Ad::class, 'get_code' ) ) );
-		$this->assertTrue( is_callable( array( Ad_Placr_Ad::class, 'get_mobile_code' ) ) );
-	}
 }

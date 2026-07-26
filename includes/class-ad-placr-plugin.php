@@ -92,7 +92,6 @@ final class Ad_Placr_Plugin {
 		Ad_Placr_Analytics::register();
 		Ad_Placr_Rest::register();
 		Ad_Placr_Ad::register();
-		Ad_Placr_Placement::register();
 		Ad_Placr_Migration::register();
 		Ad_Placr_Plugin_Updater::register();
 	}

@@ -64,7 +64,7 @@ final class Ad_Placr_Admin {
 		add_action( 'save_post_' . Ad_Placr_Ad::POST_TYPE, array( __CLASS__, 'save_ad' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_admin_notices' ) );
-
+		add_action( 'pre_get_posts', array( __CLASS__, 'exclude_migration_source_ads' ) );
 		add_filter( 'redirect_post_location', array( __CLASS__, 'append_save_notice' ) );
 		add_filter( 'manage_' . Ad_Placr_Ad::POST_TYPE . '_posts_columns', array( __CLASS__, 'ad_columns' ) );
 		add_action( 'manage_' . Ad_Placr_Ad::POST_TYPE . '_posts_custom_column', array( __CLASS__, 'render_ad_column' ), 10, 2 );
@@ -74,6 +74,37 @@ final class Ad_Placr_Admin {
 		add_action( 'admin_action_ad_placr_duplicate', array( __CLASS__, 'handle_duplicate_action' ) );
 		add_action( 'admin_action_ad_placr_activate', array( __CLASS__, 'handle_activate_action' ) );
 		add_action( 'admin_action_ad_placr_pause', array( __CLASS__, 'handle_pause_action' ) );
+	}
+
+	/**
+	 * Hide retained source Ads from the ordinary unified Ads list.
+	 *
+	 * The migration sources remain addressable for audits and exports. Restricting
+	 * this adjustment to the main wp-admin list avoids changing front-end, direct,
+	 * or secondary queries.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param WP_Query $query Query being prepared.
+	 * @return void
+	 */
+	public static function exclude_migration_source_ads( WP_Query $query ): void {
+
+		if ( ! is_admin() || ! $query->is_main_query() || Ad_Placr_Ad::POST_TYPE !== $query->get( 'post_type' ) ) {
+			return;
+		}
+
+		$source_ids = Ad_Placr_Migration::source_ad_ids();
+		if ( empty( $source_ids ) ) {
+			return;
+		}
+
+		$excluded = $query->get( 'post__not_in' );
+		$excluded = is_array( $excluded ) ? array_map( 'absint', $excluded ) : array();
+		$excluded = array_values( array_unique( array_merge( $excluded, $source_ids ) ) );
+
+		sort( $excluded, SORT_NUMERIC );
+		$query->set( 'post__not_in', $excluded );
 	}
 
 	/**

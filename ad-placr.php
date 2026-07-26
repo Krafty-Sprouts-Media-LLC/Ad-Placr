@@ -29,7 +29,7 @@ define( 'AD_PLACR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AD_PLACR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /*
- * Load order: core singleton first, then settings + placements + updater.
+ * Load order: core singleton first, then settings + display services + updater.
  * Each class exposes ::register() (or boot()) — nothing runs until boot() below.
  */
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-plugin.php';
@@ -38,7 +38,6 @@ require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-footer-sticky.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-in-content.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-positions.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-ad.php';
-require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-placement.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-migration.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-renderer.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-frontend.php';

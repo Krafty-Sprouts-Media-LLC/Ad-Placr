@@ -198,39 +198,6 @@ final class Ad_Placr_Renderer {
 	}
 
 	/**
-	 * Temporarily bridge unchanged placement callers to unified Ad rendering.
-	 *
-	 * Task 3 moves automatic callers to Ad IDs and Task 8 removes the Placement
-	 * runtime. The bridge never reads legacy Ad creative; selected Ads always
-	 * render through the unified version path below.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int                  $placement_id Temporary Placement post ID.
-	 * @param array<string, mixed> $args         Wrapper arguments for render_ad().
-	 * @return string Wrapper HTML, or an empty string when nothing should render.
-	 */
-	public static function render_placement( int $placement_id, array $args ): string {
-		if ( ! Ad_Placr_Placement::is_active( $placement_id ) ) {
-			return '';
-		}
-
-		$ads = Ad_Placr_Placement::get_ads( $placement_id );
-		if ( empty( $ads ) ) {
-			return '';
-		}
-
-		$roll  = function_exists( 'wp_rand' ) ? wp_rand( 0, PHP_INT_MAX ) : random_int( 0, PHP_INT_MAX );
-		$ad_id = Ad_Placr_Placement::choose_weighted( $ads, $roll );
-
-		if ( null === $ad_id ) {
-			return '';
-		}
-
-		return self::render_ad( $ad_id, $args );
-	}
-
-	/**
 	 * Select one eligible weighted version and build a responsive Ad wrapper.
 	 *
 	 * `$args` may provide a `dom_id`, `modifier_class`, and optional `echo` flag.

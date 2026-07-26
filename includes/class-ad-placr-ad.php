@@ -56,38 +56,6 @@ final class Ad_Placr_Ad {
 	public const META_NOTES = '_ad_placr_notes';
 
 	/**
-	 * Legacy universal creative meta key retained for the staged migration.
-	 *
-	 * New unified records store creative in {@see self::META_VERSIONS}. This key
-	 * remains registered until Task 8 converts the remaining admin, migration,
-	 * and legacy placement consumers.
-	 *
-	 * @since 2.0.0
-	 */
-	public const META_CODE = '_ad_placr_code';
-
-	/**
-	 * Legacy mobile creative meta key retained for the staged migration.
-	 *
-	 * New unified records store creative in {@see self::META_VERSIONS}. This key
-	 * remains registered until Task 8 converts the remaining admin, migration,
-	 * and legacy placement consumers.
-	 *
-	 * @since 2.0.0
-	 */
-	public const META_MOBILE_CODE = '_ad_placr_mobile_code';
-
-	/**
-	 * Legacy active-status meta key retained for the staged migration.
-	 *
-	 * Published status is authoritative for unified records. This key remains
-	 * registered until Task 8 converts the remaining admin and migration paths.
-	 *
-	 * @since 2.0.0
-	 */
-	public const META_STATUS = '_ad_placr_status';
-
-	/**
 	 * Register hooks.
 	 *
 	 * @since 2.0.0
@@ -146,11 +114,7 @@ final class Ad_Placr_Ad {
 		$string_meta = array(
 			self::META_POSITION,
 			self::META_NOTES,
-			self::META_CODE,
-			self::META_MOBILE_CODE,
-			self::META_STATUS,
 		);
-
 		foreach ( $string_meta as $key ) {
 			register_post_meta(
 				self::POST_TYPE,
@@ -358,50 +322,5 @@ final class Ad_Placr_Ad {
 				'no_found_rows'  => true,
 			)
 		);
-	}
-
-	/**
-	 * Normalize a legacy status value while old admin paths are migrated.
-	 *
-	 * Published post status is authoritative for unified records. Retain this
-	 * transition API until Task 8 removes the remaining legacy meta consumers.
-	 *
-	 * @since 2.0.0
-	 *
-	 * @param mixed $raw Raw legacy status value.
-	 * @return string 'active' or 'inactive'.
-	 */
-	public static function normalize_status( $raw ): string {
-		return 'active' === strtolower( (string) $raw ) ? 'active' : 'inactive';
-	}
-
-	/**
-	 * Read legacy universal creative while old renderers are migrated.
-	 *
-	 * New unified records read creative from {@see self::get_versions()}. Retain
-	 * this transition API until Task 8 removes legacy renderer dependencies.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int $ad_id Ad post ID.
-	 * @return string
-	 */
-	public static function get_code( int $ad_id ): string {
-		return (string) get_post_meta( $ad_id, self::META_CODE, true );
-	}
-
-	/**
-	 * Read legacy mobile creative while old renderers are migrated.
-	 *
-	 * New unified records read creative from {@see self::get_versions()}. Retain
-	 * this transition API until Task 8 removes legacy renderer dependencies.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int $ad_id Ad post ID.
-	 * @return string
-	 */
-	public static function get_mobile_code( int $ad_id ): string {
-		return (string) get_post_meta( $ad_id, self::META_MOBILE_CODE, true );
 	}
 }
