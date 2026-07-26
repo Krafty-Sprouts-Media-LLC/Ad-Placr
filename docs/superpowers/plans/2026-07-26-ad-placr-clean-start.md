@@ -70,10 +70,13 @@ settings option to the current statistics toggle while leaving normal analytics-
 
 ### Task 4: Verify and integrate
 
+- Add: `.gitattributes`
+
 - [x] Run full PHPUnit.
 - [x] Run PHPCS over `includes/` and `ad-placr.php`.
 - [x] Run full PHPStan.
 - [x] Run PHP and JavaScript syntax checks.
 - [x] Run terminology, version, source, and `git diff --check` scans.
-- [ ] Commit, review, fast-forward merge into `main`, rerun tests from `main`, and confirm a clean
+- [x] Keep PHP source on LF line endings so Windows checkouts pass WordPress PHPCS.
+- [x] Commit, review, fast-forward merge into `main`, rerun tests from `main`, and confirm a clean
   checkout.
