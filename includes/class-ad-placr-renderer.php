@@ -163,41 +163,6 @@ final class Ad_Placr_Renderer {
 	}
 
 	/**
-	 * Build legacy mobile-pair CSS through the unified responsive builder.
-	 *
-	 * Retained for unchanged footer and in-content callers until Tasks 3â€“8 move
-	 * them to the complete Ad rendering pipeline.
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param string $dom_id_selector CSS selector for the wrapper (usually #id).
-	 * @param int    $breakpoint      Mobile maximum width in pixels.
-	 * @return string Scoped responsive CSS.
-	 */
-	public static function build_mobile_pair_css( string $dom_id_selector, int $breakpoint ): string {
-		return self::build_responsive_css( $dom_id_selector, $breakpoint, max( $breakpoint + 1, 1024 ), array( 'desktop', 'tablet', 'mobile' ), true );
-	}
-
-	/**
-	 * Resolve the legacy mobile breakpoint API through the unified filter.
-	 *
-	 * Retained for unchanged callers until Tasks 3â€“8 remove their legacy
-	 * breakpoint plumbing. New renderer code uses resolve_mobile_breakpoint().
-	 *
-	 * @since 2.1.0
-	 *
-	 * @param int $fallback Default breakpoint in pixels.
-	 * @return int Clamped breakpoint.
-	 */
-	public static function resolve_breakpoint( int $fallback = 782 ): int {
-		if ( 782 === $fallback ) {
-			return self::resolve_mobile_breakpoint();
-		}
-
-		return max( 320, min( 1200, (int) apply_filters( 'ad_placr_mobile_breakpoint', $fallback ) ) );
-	}
-
-	/**
 	 * Select one eligible weighted version and build a responsive Ad wrapper.
 	 *
 	 * `$args` may provide a `dom_id`, `modifier_class`, and optional `echo` flag.

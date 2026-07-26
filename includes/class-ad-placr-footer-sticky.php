@@ -158,7 +158,7 @@ final class Ad_Placr_Footer_Sticky {
 	 * Resolve the CSS max-width breakpoint for mobile versus desktop slots.
 	 *
 	 * Uses WordPress's standard 782px small-screen breakpoint by default. The
-	 * legacy filter remains available while responsive output is renderer-owned.
+	 * filter lets site code adjust it while responsive output stays renderer-owned.
 	 *
 	 * @since 0.1.2
 	 *

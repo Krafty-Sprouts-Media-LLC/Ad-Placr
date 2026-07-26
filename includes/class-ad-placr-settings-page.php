@@ -2,9 +2,6 @@
 /**
  * Statistics storage settings for the unified Ad manager.
  *
- * Legacy placement settings remain in the option as read-only migration input.
- * Saving this screen changes only the statistics opt-in value.
- *
  * @package AdPlacr
  * @since 0.1.0
  */
@@ -65,7 +62,7 @@ final class Ad_Placr_Settings_Page {
 	}
 
 	/**
-	 * Register the retained option with a statistics-only sanitizer.
+	 * Register the statistics option with its sanitizer.
 	 *
 	 * @since 0.1.0
 	 *
@@ -84,25 +81,7 @@ final class Ad_Placr_Settings_Page {
 	}
 
 	/**
-	 * Change the statistics toggle without discarding migration source data.
-	 *
-	 * @since 2.7.0
-	 *
-	 * @param array<string, mixed> $current Existing complete settings option.
-	 * @param bool                 $enabled Whether first-party statistics storage is enabled.
-	 * @return array<string, mixed>
-	 */
-	public static function merge_analytics_setting( array $current, bool $enabled ): array {
-		$current['analytics_enabled'] = $enabled;
-
-		return $current;
-	}
-
-	/**
-	 * Sanitize the statistics checkbox while preserving all existing option keys.
-	 *
-	 * The old footer and in-content values are retained strictly as migration
-	 * evidence. They are never accepted back from this form.
+	 * Sanitize the statistics checkbox into the complete settings shape.
 	 *
 	 * @since 0.1.0
 	 *
@@ -110,15 +89,12 @@ final class Ad_Placr_Settings_Page {
 	 * @return array<string, mixed>
 	 */
 	public static function sanitize_settings( $value ): array {
-		$current = get_option( self::OPTION_NAME, array() );
-		if ( ! is_array( $current ) ) {
-			$current = array();
-		}
-
 		$value   = is_array( $value ) ? $value : array();
 		$enabled = ! empty( $value['analytics_enabled'] );
 
-		return self::merge_analytics_setting( $current, $enabled );
+		return array(
+			'analytics_enabled' => $enabled,
+		);
 	}
 
 	/**

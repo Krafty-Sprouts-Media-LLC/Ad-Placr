@@ -445,9 +445,9 @@ final class Ad_Placr_Analytics {
 		dbDelta( $sql );
 
 		/*
-		 * dbDelta can partially apply a schema and does not remove legacy
-		 * columns. Read the physical shape before recording success so a
-		 * failed or incomplete migration is retried on the next request.
+		 * dbDelta can partially apply a schema and does not remove extra columns.
+		 * Read the physical shape before recording success so an incomplete schema
+		 * update is retried on the next request.
 		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is trusted prefix plus a class constant.
 		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 );

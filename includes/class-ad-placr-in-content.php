@@ -69,8 +69,8 @@ final class Ad_Placr_In_Content {
 	/**
 	 * Active in-content Ads that match singular targeting for this request.
 	 *
-	 * Each row carries Ad ID, before/after position, targeting, a BC slot-shaped
-	 * array for legacy filters, and a stable DOM slug for wrapper / CSS scoping.
+	 * Each row carries Ad ID, before/after position, targeting, a slot-shaped
+	 * filter payload, and a stable DOM slug for wrapper / CSS scoping.
 	 *
 	 * @since 2.1.0
 	 *
@@ -87,7 +87,7 @@ final class Ad_Placr_In_Content {
 
 		/*
 		 * Query both paragraph positions. Position taxonomy key decides before vs after;
-		 * paragraph index lives on the targeting blob (set at migration / admin save).
+		 * paragraph index lives on the targeting blob saved by the Ad editor.
 		 */
 		$by_position = array(
 			Ad_Placr_Positions::IN_CONTENT_BEFORE_PARAGRAPH => 'before',
@@ -138,8 +138,8 @@ final class Ad_Placr_In_Content {
 	/**
 	 * Stable DOM id slug ending in the unified Ad post ID.
 	 *
-	 * A migrated `slot_id` prefix preserves recognizable legacy identity while
-	 * the Ad ID suffix guarantees uniqueness for multi-Ad paragraph targets.
+	 * An optional saved `slot_id` keeps the wrapper readable while the Ad ID suffix
+	 * guarantees uniqueness when several Ads target the same paragraph.
 	 *
 	 * @since 2.1.0
 	 *
@@ -163,7 +163,7 @@ final class Ad_Placr_In_Content {
 	}
 
 	/**
-	 * BC slot-shaped array for legacy filters (`ad_placr_in_content_slot_should_display`, breakpoint).
+	 * Slot-shaped payload for in-content display and breakpoint filters.
 	 *
 	 * @since 2.1.0
 	 *
@@ -185,8 +185,8 @@ final class Ad_Placr_In_Content {
 		}
 
 		/*
-		 * The legacy filter payload retains the saved slot identity. The separate
-		 * DOM slug may include the Ad ID suffix needed for unique wrappers.
+		 * The filter payload retains the saved slot identity. The separate DOM slug
+		 * may include the Ad ID suffix needed for unique wrappers.
 		 */
 		if ( '' === $slot_id ) {
 			$slot_id = $dom_slug;

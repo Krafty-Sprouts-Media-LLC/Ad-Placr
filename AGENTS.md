@@ -35,23 +35,29 @@ plugin by [Krafty Sprouts Media LLC](https://kraftysprouts.com). Read this **bef
 - **Core singleton:** `includes/class-ad-placr-plugin.php` — registers subsystems, activation,
   textdomain, and owns `default_settings()` / `get_settings()`.
 - **Settings:** `includes/class-ad-placr-settings-page.php` — Settings API, option
-  `ad_placr_settings` (single array). Always read via `Ad_Placr_Plugin::get_settings()`.
-- **Placements today:**
-  - `class-ad-placr-footer-sticky.php` — `wp_footer` (pri 100), floating footer, universal +
-    mobile-override code, scoped responsive CSS.
-  - `class-ad-placr-in-content.php` — `the_content` (pri 12), N slots targeting paragraph numbers
-    (`before`/`after`), per-slot mobile override + scoped CSS.
+  `ad_placr_settings` containing only `analytics_enabled`. Always read via
+  `Ad_Placr_Plugin::get_settings()`.
+- **Unified Ads:** `includes/class-ad-placr-ad.php` registers `ad_placr_ad`. One Ad owns its display
+  location, display rules, Active/Paused post status, private notes, and one or more weighted code
+  versions with optional mobile code.
+- **One-screen editor:** `includes/class-ad-placr-admin.php` manages the complete Ad on one native
+  WordPress editing screen. There is no Placements menu or separate Placement record.
+- **Display:** `class-ad-placr-positions.php` defines the location registry;
+  `class-ad-placr-renderer.php` selects and renders code versions; frontend, footer-sticky, and
+  in-content services connect Ads to their WordPress hooks.
+- **Manual display:** `[ad_placr ad="123"]` and the Ad Placr sidebar widget both render a complete Ad
+  directly by Ad ID.
+- **Statistics:** analytics storage is opt-in and records Ad/version impressions and clicks without
+  personal information.
 - **Updates:** `lib/plugin-update-checker/` (PUC, bundled) → GitHub `Krafty-Sprouts-Media-LLC/Ad-Placr`.
-- **Uninstall:** `uninstall.php` removes `ad_placr_settings`.
+- **Uninstall:** `uninstall.php` removes settings, the analytics table, and its cleanup schedule; it
+  does not delete Ads.
 
 **Requirements:** PHP **8.0+**, WordPress **6.0+** (see plugin header — the source of truth).
 
-Where this is going: a **unified Ad model**. One `ad_placr_ad` record owns its display location,
-display rules, status, and one or more weighted ad-code versions. Users manage everything on one
-screen; there is no Placements menu or separate Placement record. The local unreleased 2.6.0
-Ad/Placement implementation is transitional and must not be extended. See
-`docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md` for the approved replacement
-design. `IMPLEMENTATION-PLAN.md` and the 2026-07-22 design are retained as superseded history.
+Version 2.7.0 is the clean-start **unified Ad model**. No production users or released two-record
+data exist, so the plugin contains no Ad/Placement converter or legacy-data migration runtime.
+`IMPLEMENTATION-PLAN.md` and the 2026-07-22 designs are retained as superseded history only.
 
 ---
 
@@ -291,10 +297,13 @@ Concrete bugs found in `/adsly` during the audit. When re-implementing a feature
 
 - `docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md` — **approved design** for
   the one-Ad, one-screen model. Start here for the current "what/why".
+- `docs/superpowers/specs/2026-07-26-ad-placr-clean-start-design.md` — approved decision to ship the
+  unified model without an unreleased-data migration layer.
+- `docs/superpowers/plans/2026-07-26-ad-placr-clean-start.md` — completed clean-start implementation
+  and verification checklist.
 - `docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md` — superseded historical
   Ad/Placement design; do not use for new work.
-- `IMPLEMENTATION-PLAN.md` — superseded historical roadmap. A replacement plan follows final review
-  of the unified design.
+- `IMPLEMENTATION-PLAN.md` — superseded historical roadmap; do not use for new work.
 - `development.md` — local setup, layout, PUC/update details.
 - `roadmap.md` — longer-horizon backlog beyond v1.
 - `changelog.md` — shipped history.

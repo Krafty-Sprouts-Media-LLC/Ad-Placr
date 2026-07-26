@@ -78,6 +78,24 @@ final class AnalyticsTest extends TestCase {
 	}
 
 	/**
+	 * Deactivation clears every scheduled analytics cleanup event.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_deactivation_clears_analytics_cleanup_schedule(): void {
+		$GLOBALS['ad_placr_test_cleared_hooks'] = array();
+
+		Ad_Placr_Plugin::instance()->deactivate();
+
+		$this->assertSame(
+			array( Ad_Placr_Analytics::CRON_HOOK ),
+			$GLOBALS['ad_placr_test_cleared_hooks']
+		);
+	}
+
+	/**
 	 * Statistics cells distinguish disabled storage from a zero count.
 	 *
 	 * @since 2.6.0

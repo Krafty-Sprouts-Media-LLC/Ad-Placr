@@ -2,7 +2,8 @@
 
 WordPress ad manager by [Krafty Sprouts Media LLC](https://kraftysprouts.com).
 
-Reusable **Ads** (creatives) and **Placements** (position + targeting + weighted ad list) with automatic positions, shortcode/widget embeds, targeting rules, and opt-in analytics.
+Each **Ad** contains everything needed to display it: location, status, display rules, one or more
+weighted code versions, optional mobile code, and statistics.
 
 ## Requirements
 
@@ -11,25 +12,29 @@ Reusable **Ads** (creatives) and **Placements** (position + targeting + weighted
 
 ## Features
 
-- **Ads** CPT — universal + optional mobile ad code, active/inactive status
-- **Placements** CPT — canonical position, weighted rotation, targeting (contexts, post types, users, schedule, URL, categories/tags)
-- Automatic positions — sticky footer, in-content paragraphs, header/footer, rails, front/blog/archive tops & bottoms
-- Manual — `[ad_placr placement="ID"]` / `[ad_placr ad="ID"]`, sidebar widget
-- Analytics — always-on `ad_placr_impression` / `ad_placr_click` hooks; optional first-party event storage (90-day retention)
+- One-screen Ad editor with clear Active and Paused status
+- Main and optional mobile ad code, plus weighted code versions
+- Display rules for page context, content type, visitors, schedules, URL paths, categories, and tags
+- Automatic locations including sticky footer, in-content paragraphs, header/footer, side rails, and
+  front-page, blog, and archive positions
+- Manual display with `[ad_placr ad="123"]` or the Ad Placr sidebar widget
+- Optional first-party impression and click statistics with 90-day retention
 - GitHub updates via bundled Plugin Update Checker
 
 ## Admin
 
-1. **Ads** — create creatives (Ad Placr → Ads)
-2. **Placements** — pick position, attach weighted ads, set targeting
-3. **Settings → Ad Placr** — disclosure text, analytics storage toggle, legacy option fields (reference / re-migration)
+1. Open **Ads → Add New**.
+2. Choose where the Ad should appear.
+3. Paste the ad code and choose any display rules.
+4. Save it as Paused while preparing it, or Active when it is ready.
+5. Optionally open **Ads → Settings** to enable first-party statistics.
 
 ## Docs in this repo
 
 | File | Purpose |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | Conventions for contributors / AI agents |
-| [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) | Phased rebuild roadmap |
+| [`docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md`](docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md) | Approved unified Ad design |
 | [`development.md`](development.md) | Local layout & coding notes |
 | [`roadmap.md`](roadmap.md) | Backlog beyond v1 |
 | [`changelog.md`](changelog.md) | Release history |

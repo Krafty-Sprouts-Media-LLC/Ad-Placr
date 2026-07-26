@@ -65,16 +65,11 @@ automatic location so the choice is deliberate.
 
 No. The events table stores only event type, Ad ID, version ID, and timestamp.
 
-= What happens to older Ad Placr settings? =
-
-The 2.7.0 migration converts older enabled settings—or unreleased local Ad/Placement test data—into
-complete Ads. Source data is retained for verification and hidden from the ordinary Ads list.
-
 == Changelog ==
 
 = 2.7.0 =
 * One-screen Ads, display locations and rules, weighted code versions, mobile code, unified
-  statistics, and safe migration. See changelog.md.
+  statistics, and a clean unified data model. See changelog.md.
 
 = 2.6.0 =
 * Unreleased transitional Ad/Placement administration. See changelog.md.
@@ -94,7 +89,7 @@ complete Ads. Source data is retained for verification and hidden from the ordin
 * Automatic display-location dispatcher and side-rail styles. See changelog.md.
 
 = 2.1.0 =
-* Content display foundations and migration slot identity. See changelog.md.
+* Content display foundations and stable in-content slot identity. See changelog.md.
 
 = 2.0.0 =
 * Ad-manager rebuild foundations and canonical display-location registry. See changelog.md.

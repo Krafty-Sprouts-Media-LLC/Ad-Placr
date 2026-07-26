@@ -151,23 +151,21 @@ final class AdminTest extends TestCase {
 	}
 
 	/**
-	 * Saving statistics preserves source values retained for migration audit.
+	 * Saving statistics returns the complete clean settings shape.
 	 *
 	 * @since 2.7.0
 	 *
 	 * @return void
 	 */
-	public function test_statistics_setting_preserves_legacy_migration_source(): void {
-		$current = array(
-			'footer_sticky'     => array( 'enabled' => true, 'code' => '<ins>source</ins>' ),
-			'in_content_slots'  => array( array( 'id' => 'source-slot' ) ),
-			'analytics_enabled' => false,
+	public function test_statistics_setting_discards_unreleased_legacy_values(): void {
+		$updated = Ad_Placr_Settings_Page::sanitize_settings(
+			array(
+				'footer_sticky'     => array( 'enabled' => true ),
+				'in_content_slots'  => array( array( 'id' => 'old-slot' ) ),
+				'analytics_enabled' => true,
+			)
 		);
 
-		$updated = Ad_Placr_Settings_Page::merge_analytics_setting( $current, true );
-
-		$this->assertTrue( $updated['analytics_enabled'] );
-		$this->assertSame( $current['footer_sticky'], $updated['footer_sticky'] );
-		$this->assertSame( $current['in_content_slots'], $updated['in_content_slots'] );
+		$this->assertSame( array( 'analytics_enabled' => true ), $updated );
 	}
 }

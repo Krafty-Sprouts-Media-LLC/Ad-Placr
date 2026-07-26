@@ -38,28 +38,16 @@ There is no Placement runtime or separate Placement editor.
 - `includes/class-ad-placr-widget.php` — sidebar widget that stores one Ad ID.
 - `includes/class-ad-placr-analytics.php`, `includes/class-ad-placr-rest.php`, and
   `assets/js/tracking.js` — opt-in Ad/version statistics.
-- `includes/class-ad-placr-migration.php` — one-time reader for older public settings and retained
-  unreleased local source records.
 - `lib/plugin-update-checker/` — bundled Plugin Update Checker.
 
 Admin behavior uses the native WordPress UI plus `assets/css/admin.css` and `assets/js/admin.js`; no
 JavaScript build step or third-party dialog library is required.
 
-## Settings and migration
+## Settings
 
 `ad_placr_settings` remains the settings option and should always be read through
-`Ad_Placr_Plugin::get_settings()`. Its current user-facing setting is the statistics opt-in. Older
-footer and in-content values remain migration sources and are not rewritten during conversion.
-
-Migration version 2:
-
-- converts each retained local source record into one complete Ad, or converts older public settings
-  when no such records exist;
-- uses `ad_placr_unified_migration_map` and `ad_placr_unified_migration_lock` with autoload disabled;
-- never rewrites or deletes source data;
-- never rewrites a destination after it has been mapped.
-
-Back up the database before deliberately exercising migration in a local site.
+`Ad_Placr_Plugin::get_settings()`. It contains only the site-wide statistics opt-in. Each Ad stores
+its own display location, rules, code versions, status, and notes.
 
 ## Coding and verification
 
@@ -86,6 +74,7 @@ synchronized. Plugin Update Checker reads the GitHub repository
 
 ## Uninstall
 
-`uninstall.php` removes plugin options, migration coordination options, the statistics table, and
-the cleanup schedule. It deliberately does not delete Ad posts or retained migration source posts in
-2.7.0.
+`uninstall.php` removes plugin options, the statistics table, and the cleanup schedule. It
+deliberately does not delete Ad posts.
+
+Deactivation also clears the statistics cleanup schedule; activation recreates it when needed.

@@ -38,7 +38,6 @@ require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-footer-sticky.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-in-content.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-positions.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-ad.php';
-require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-migration.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-renderer.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-frontend.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-targeting.php';

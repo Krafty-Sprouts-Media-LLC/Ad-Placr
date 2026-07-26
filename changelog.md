@@ -14,8 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and enable or pause versions independently.
 - **Per-version statistics** — impressions, clicks, and click-through rate are available for the
   complete Ad and each saved version.
-- **Unified migration** — older public settings and unreleased local two-record data convert into
-  complete Ads with an idempotent, non-autoloaded migration map and lock.
+- **Clean unified data model** — new Ads start directly in the complete one-record format.
 
 ### Changed
 
@@ -23,17 +22,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The shortcode is `[ad_placr ad="123"]`; the sidebar widget selects one Ad.
 - Active/Paused is controlled by WordPress post status, with clear validation before activation.
 - Tracking stores only event type, Ad ID, version ID, and timestamp.
+- Deactivation and uninstall clear every scheduled statistics-cleanup event.
 
 ### Removed
 
 - The separate Placements workflow and runtime.
 - Transitional single-code Ad fields and Placement-based analytics/widget compatibility that never
   shipped to production users.
+- Unnecessary migration code for unreleased Ad/Placement test data and obsolete placement settings.
 
 ### Notes
 
-- Older source records/settings are retained during verification and hidden from the ordinary Ads
-  list; the migration does not rewrite or delete them.
+- This is a clean build with no production users to upgrade, so 2.7.0 does not run a legacy-data
+  migration.
 
 ## [2.6.0] - 22/07/2026
 

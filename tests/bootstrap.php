@@ -99,6 +99,20 @@ if ( ! function_exists( 'wp_generate_uuid4' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+	/**
+	 * Record cleared cron hooks for lifecycle tests without WordPress.
+	 *
+	 * @param string $hook Cron hook name.
+	 * @return int
+	 */
+	function wp_clear_scheduled_hook( $hook ) {
+		$GLOBALS['ad_placr_test_cleared_hooks'][] = (string) $hook;
+
+		return 1;
+	}
+}
+
 if ( ! class_exists( 'WP_Widget' ) ) {
 	/**
 	 * Minimal WP_Widget stub so the widget class can load in unit tests.
@@ -138,72 +152,10 @@ if ( ! class_exists( 'WP_Widget' ) ) {
 	}
 }
 
-if ( ! class_exists( 'WP_Query' ) ) {
-	/**
-	 * Minimal WP_Query stub for admin list-query tests.
-	 */
-	class WP_Query {
-		/**
-		 * Query variables stored by the test double.
-		 *
-		 * @var array<string, mixed>
-		 */
-		private array $query_vars;
-
-		/**
-		 * Whether this is the main request query.
-		 *
-		 * @var bool
-		 */
-		private bool $main_query;
-
-		/**
-		 * Build a test query.
-		 *
-		 * @param array<string, mixed> $query_vars Query variables.
-		 * @param bool                 $main_query Whether this is the main query.
-		 */
-		public function __construct( array $query_vars = array(), bool $main_query = true ) {
-			$this->query_vars = $query_vars;
-			$this->main_query = $main_query;
-		}
-
-		/**
-		 * Report whether this is the main query.
-		 *
-		 * @return bool
-		 */
-		public function is_main_query(): bool {
-			return $this->main_query;
-		}
-
-		/**
-		 * Read a query variable.
-		 *
-		 * @param string $key Query-variable key.
-		 * @return mixed
-		 */
-		public function get( string $key ) {
-			return $this->query_vars[ $key ] ?? null;
-		}
-
-		/**
-		 * Store a query variable.
-		 *
-		 * @param string $key   Query-variable key.
-		 * @param mixed  $value Query-variable value.
-		 * @return void
-		 */
-		public function set( string $key, $value ): void {
-			$this->query_vars[ $key ] = $value;
-		}
-	}
-}
-
 // Class files under test are required here as tasks add them.
+require dirname( __DIR__ ) . '/includes/class-ad-placr-plugin.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-positions.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-ad.php';
-require dirname( __DIR__ ) . '/includes/class-ad-placr-migration.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-renderer.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-frontend.php';
 require dirname( __DIR__ ) . '/includes/class-ad-placr-targeting.php';

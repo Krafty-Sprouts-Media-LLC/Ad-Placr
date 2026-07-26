@@ -26,9 +26,9 @@ settings option to the current statistics toggle while leaving normal analytics-
 
 - Modify: `tests/unit/SanityTest.php`
 
-- [ ] Add source assertions that reject `Ad_Placr_Migration`, its class filename, its three option
+- [x] Add source assertions that reject `Ad_Placr_Migration`, its class filename, its three option
   names, and `ad_placr_placement` in current runtime files.
-- [ ] Run `vendor/bin/phpunit --filter SanityTest` and confirm failure against the existing
+- [x] Run `vendor/bin/phpunit --filter SanityTest` and confirm failure against the existing
   migration subsystem.
 
 ### Task 2: Remove migration and compatibility
@@ -46,33 +46,34 @@ settings option to the current statistics toggle while leaving normal analytics-
 - Modify: `tests/unit/AdminTest.php`
 - Modify: `uninstall.php`
 
-- [ ] Remove migration bootstrap and source-hiding query behavior.
-- [ ] Reduce default/current settings to `analytics_enabled`.
-- [ ] Make statistics saving return the current clean settings shape rather than preserving unknown
+- [x] Remove migration bootstrap and source-hiding query behavior.
+- [x] Reduce default/current settings to `analytics_enabled`.
+- [x] Make statistics saving return the current clean settings shape rather than preserving unknown
   legacy values.
-- [ ] Remove migration/database-version uninstall options.
-- [ ] Run focused and full PHPUnit until green.
+- [x] Remove migration/database-version uninstall options.
+- [x] Run focused and full PHPUnit until green.
 
 ### Task 3: Correct release documentation
 
 **Files:**
 
 - Modify: `readme.txt`
+- Modify: `readme.md`
 - Modify: `changelog.md`
 - Modify: `development.md`
 - Modify: `roadmap.md`
 - Delete: `docs/HANDOVER-2026-07-24-UNIFIED-AD-MODEL.md`
 
-- [ ] Remove current migration promises and backup instructions.
-- [ ] State that 2.7.0 is a clean-start unified model.
-- [ ] Keep older changelog sections unchanged as historical records.
+- [x] Remove current migration promises and backup instructions.
+- [x] State that 2.7.0 is a clean-start unified model.
+- [x] Keep older changelog sections unchanged as historical records.
 
 ### Task 4: Verify and integrate
 
-- [ ] Run full PHPUnit.
-- [ ] Run PHPCS over `includes/` and `ad-placr.php`.
-- [ ] Run full PHPStan.
-- [ ] Run PHP and JavaScript syntax checks.
-- [ ] Run terminology, version, source, and `git diff --check` scans.
+- [x] Run full PHPUnit.
+- [x] Run PHPCS over `includes/` and `ad-placr.php`.
+- [x] Run full PHPStan.
+- [x] Run PHP and JavaScript syntax checks.
+- [x] Run terminology, version, source, and `git diff --check` scans.
 - [ ] Commit, review, fast-forward merge into `main`, rerun tests from `main`, and confirm a clean
   checkout.
