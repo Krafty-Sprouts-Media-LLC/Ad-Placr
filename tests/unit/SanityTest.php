@@ -77,4 +77,43 @@ final class SanityTest extends TestCase {
 		$this->assertStringNotContainsString( 'get_code', $source );
 		$this->assertStringNotContainsString( 'get_mobile_code', $source );
 	}
+
+	/**
+	 * All public release-version declarations remain synchronized.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_release_version_declarations_are_2_7_0(): void {
+		$root = dirname( __DIR__, 2 );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source scan.
+		$plugin = (string) file_get_contents( $root . '/ad-placr.php' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source scan.
+		$readme = (string) file_get_contents( $root . '/readme.txt' );
+
+		$this->assertStringContainsString( 'Version:           2.7.0', $plugin );
+		$this->assertStringContainsString( "define( 'AD_PLACR_VERSION', '2.7.0' );", $plugin );
+		$this->assertStringContainsString( 'Stable tag: 2.7.0', $readme );
+	}
+
+	/**
+	 * Uninstall removes both non-autoloaded migration coordination options.
+	 *
+	 * Retained source posts are deliberately not deleted by this release.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @return void
+	 */
+	public function test_uninstall_cleans_migration_options_without_deleting_posts(): void {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source scan.
+		$source = (string) file_get_contents( dirname( __DIR__, 2 ) . '/uninstall.php' );
+
+		$this->assertStringContainsString( "delete_option( 'ad_placr_unified_migration_map' );", $source );
+		$this->assertStringContainsString( "delete_option( 'ad_placr_unified_migration_lock' );", $source );
+		$this->assertStringNotContainsString( 'wp_delete_post', $source );
+		$this->assertStringNotContainsString( 'delete_posts', $source );
+	}
 }

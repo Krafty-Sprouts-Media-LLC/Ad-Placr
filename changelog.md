@@ -4,6 +4,37 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 26/07/2026
+
+### Added
+
+- **One complete Ad editor** — choose the display location, Active/Paused status, display rules,
+  code versions, mobile code, and statistics without switching between separate records.
+- **Weighted Ad versions** — keep multiple code choices inside one Ad, give each a traffic weight,
+  and enable or pause versions independently.
+- **Per-version statistics** — impressions, clicks, and click-through rate are available for the
+  complete Ad and each saved version.
+- **Unified migration** — older public settings and unreleased local two-record data convert into
+  complete Ads with an idempotent, non-autoloaded migration map and lock.
+
+### Changed
+
+- Automatic locations, shortcode, and widget now render complete Ads directly by Ad ID.
+- The shortcode is `[ad_placr ad="123"]`; the sidebar widget selects one Ad.
+- Active/Paused is controlled by WordPress post status, with clear validation before activation.
+- Tracking stores only event type, Ad ID, version ID, and timestamp.
+
+### Removed
+
+- The separate Placements workflow and runtime.
+- Transitional single-code Ad fields and Placement-based analytics/widget compatibility that never
+  shipped to production users.
+
+### Notes
+
+- Older source records/settings are retained during verification and hidden from the ordinary Ads
+  list; the migration does not rewrite or delete them.
+
 ## [2.6.0] - 22/07/2026
 
 ### Added

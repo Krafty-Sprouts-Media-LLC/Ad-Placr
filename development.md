@@ -1,57 +1,91 @@
 # Ad Placr — development
 
-**Ad Placr** is a WordPress plugin by [Krafty Sprouts Media LLC](https://kraftysprouts.com). This document describes how to work on the plugin in a local environment.
+**Ad Placr** is a WordPress ad-management plugin by
+[Krafty Sprouts Media LLC](https://kraftysprouts.com).
 
 ## Requirements
 
-- PHP **8.0+** (see the plugin header).
-- WordPress **6.0+**.
+- PHP 8.0+
+- WordPress 6.0+
+
+The plugin header in `ad-placr.php` is the source of truth.
+
+## Current architecture
+
+One `ad_placr_ad` post owns the complete display record:
+
+- WordPress post status is Active (`publish`) or Paused (`draft`);
+- `_ad_placr_position` stores one canonical display location;
+- `_ad_placr_targeting` stores display rules;
+- `_ad_placr_versions` stores ordered, weighted code versions with stable IDs;
+- `_ad_placr_notes` stores private administrator notes.
+
+There is no Placement runtime or separate Placement editor.
 
 ## Layout
 
-- **Main file:** `ad-placr.php` defines constants and loads class files from `includes/` with `require_once`.
-- **Third-party:** [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) lives under **`lib/plugin-update-checker/`** (bundled; commit when you publish).
-- **Admin assets:** `admin/js/in-content-slots.js`, `admin/css/settings-slots.css` — repeater UI for in-content slots (Settings → Ad Placr).
-- **Classes:** WordPress-style `class-ad-placr-*.php` filenames; classes are prefixed with `Ad_Placr_` to limit global namespace collisions.
-- **Settings:** `includes/class-ad-placr-settings-page.php` — option `ad_placr_settings` (array). Keys: `footer_sticky`, `in_content_slots` (list of slot arrays). Use **`Ad_Placr_Plugin::get_settings()`** for merged values with defaults.
-- **Footer sticky:** `includes/class-ad-placr-footer-sticky.php` — `wp_footer`, `assets/css/footer-sticky.css`. Mobile breakpoint filter: `ad_placr_footer_sticky_mobile_breakpoint` (default **782px**, clamped 320–1200).
-- **In-content:** `includes/class-ad-placr-in-content.php` — `the_content` priority **12**. Multiple slots; each slot has `id`, `enabled`, optional `title`, `paragraph_index`, `position` (`before`/`after`), `post_types`, `code`, `mobile_code`. Injection walks `<p>…</p>` chunks in one pass. Per-slot wrapper id: `ad-placr-ic-{slot_id}` for scoped responsive CSS. Filters: `ad_placr_in_content_should_inject`, `ad_placr_in_content_slot_should_display`, `ad_placr_in_content_mobile_breakpoint`.
-- **Shortcode:** `[ad_placr placement="ID"]` or `[ad_placr ad="ID"]` (`includes/class-ad-placr-shortcode.php`). When both are set, `placement` wins. Output goes through `Ad_Placr_Renderer`.
-- **Widget:** Appearance → Widgets → **Ad Placr** (`includes/class-ad-placr-widget.php`) — select a Placement; optional sticky uses `assets/css/widget.css`.
-- **Targeting:** `includes/class-ad-placr-targeting.php` — `should_display()` / `matches()`; Placement meta box in `includes/class-ad-placr-admin.php`. Empty rules fail open; no UA device gate.
-- **Analytics:** `includes/class-ad-placr-analytics.php` + `class-ad-placr-rest.php` + `assets/js/tracking.js`. Setting `analytics_enabled` gates first-party rows; hooks always fire. Table `{prefix}ad_placr_events`, cron `ad_placr_analytics_cleanup` (90 days).
-- **Admin:** `includes/class-ad-placr-admin.php` — Ad/Placement meta boxes (creative, details, weighted ads, targeting) and list-table columns. Capability `manage_options`.
+- `ad-placr.php` — minimal bootstrap, constants, and class loading.
+- `includes/class-ad-placr-plugin.php` — subsystem registration, activation, and settings defaults.
+- `includes/class-ad-placr-ad.php` — unified Ad post type and version model.
+- `includes/class-ad-placr-admin.php` — one-screen Ad editor, list columns, validation, and actions.
+- `includes/class-ad-placr-positions.php` — canonical, filterable display-location registry.
+- `includes/class-ad-placr-targeting.php` — shared display-rule evaluation.
+- `includes/class-ad-placr-renderer.php` — weighted version selection and responsive markup.
+- `includes/class-ad-placr-frontend.php` — registry-driven automatic locations.
+- `includes/class-ad-placr-footer-sticky.php` — sticky-footer output.
+- `includes/class-ad-placr-in-content.php` — before/after paragraph insertion.
+- `includes/class-ad-placr-shortcode.php` — `[ad_placr ad="ID"]`.
+- `includes/class-ad-placr-widget.php` — sidebar widget that stores one Ad ID.
+- `includes/class-ad-placr-analytics.php`, `includes/class-ad-placr-rest.php`, and
+  `assets/js/tracking.js` — opt-in Ad/version statistics.
+- `includes/class-ad-placr-migration.php` — one-time reader for older public settings and retained
+  unreleased local source records.
+- `lib/plugin-update-checker/` — bundled Plugin Update Checker.
 
-## Roadmap
+Admin behavior uses the native WordPress UI plus `assets/css/admin.css` and `assets/js/admin.js`; no
+JavaScript build step or third-party dialog library is required.
 
-See **`roadmap.md`** and **`IMPLEMENTATION-PLAN.md`** for the rebuild phases (targeting, analytics, Gutenberg block, etc.).
+## Settings and migration
 
-Composer is **not** required for this plugin: there is no `vendor/` autoloader. If you later add Composer-only tooling (e.g. PHPCS), keep it dev-local and do not make activation depend on `vendor/autoload.php`.
+`ad_placr_settings` remains the settings option and should always be read through
+`Ad_Placr_Plugin::get_settings()`. Its current user-facing setting is the statistics opt-in. Older
+footer and in-content values remain migration sources and are not rewritten during conversion.
 
-## Coding standards
+Migration version 2:
 
-- Follow the [WordPress PHP coding standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/php/) for this codebase (tabs, Yoda conditions where appropriate, `array()` syntax, etc.).
-- Do not change existing `@since` tags when editing; they mark when code was first introduced.
+- converts each retained local source record into one complete Ad, or converts older public settings
+  when no such records exist;
+- uses `ad_placr_unified_migration_map` and `ad_placr_unified_migration_lock` with autoload disabled;
+- never rewrites or deletes source data;
+- never rewrites a destination after it has been mapped.
 
-## Changelog and versioning
+Back up the database before deliberately exercising migration in a local site.
 
-After functional changes, update `changelog.md` and bump the plugin version in:
+## Coding and verification
 
-- `ad-placr.php` (header + `AD_PLACR_VERSION`)
-- `readme.txt` (`Stable tag` when applicable)
-- `changelog.md` (new section)
+- Follow `AGENTS.md`, WordPress PHP coding standards, and existing `@since` history.
+- Ad network code is the documented privileged-user raw-output exception; escape everything else.
+- Composer is dev-local only and is never required for plugin activation.
 
-## GitHub releases and updates
+Run:
 
-The plugin ships with [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) in **`lib/plugin-update-checker/`** (commit that directory when you push). Updates are checked against **`https://github.com/Krafty-Sprouts-Media-LLC/Ad-Placr`** on branch **`main`** by default.
+```bash
+vendor/bin/phpunit
+composer exec phpcs -- --standard=WordPress includes/ ad-placr.php
+composer exec phpstan -- analyse
+```
 
-- **Bump the version** in `ad-placr.php` (`Version` header and `AD_PLACR_VERSION`) before tagging.
-- **Push** your changes to GitHub, then create a **tag** or ensure the branch `HEAD` reflects the new version (PUC reads the version from `ad-placr.php` in the repo).
-- If your default branch is **`master`** instead of `main`, add a small mu-plugin or theme snippet, or use:  
-  `add_filter( 'ad_placr_update_checker_branch', fn () => 'master' );`
+Then verify admin save/reload, front-end output, statistics, and `WP_DEBUG_LOG` in real WordPress
+requests.
 
-If the repository is **private**, you must supply a GitHub token with read access — see the Plugin Update Checker README (`setAuthentication`).
+## Releases and updates
+
+Keep the plugin header version, `AD_PLACR_VERSION`, `readme.txt` Stable tag, and `changelog.md`
+synchronized. Plugin Update Checker reads the GitHub repository
+`Krafty-Sprouts-Media-LLC/Ad-Placr` from `main` by default.
 
 ## Uninstall
 
-`uninstall.php` removes `ad_placr_settings` when the plugin is deleted from WordPress.
+`uninstall.php` removes plugin options, migration coordination options, the statistics table, and
+the cleanup schedule. It deliberately does not delete Ad posts or retained migration source posts in
+2.7.0.

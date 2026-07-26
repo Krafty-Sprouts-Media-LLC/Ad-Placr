@@ -3,7 +3,7 @@
  * Core plugin bootstrap.
  *
  * Owns activation, textdomain, default settings shape, and safe reads of
- * `ad_placr_settings`. Placement classes call get_settings() — never raw get_option().
+ * `ad_placr_settings`. Display services call get_settings() — never raw get_option().
  *
  * @package AdPlacr
  * @since 0.1.0

@@ -1,49 +1,48 @@
 # Ad Placr — roadmap
 
-> **Direction changed (2026-07-22).** Ad Placr is being rebuilt into a full ad manager on an
-> **Ad ↔ Placement** model (reusable creatives + positioned, targeted, weighted placements). The
-> authoritative plan is **`IMPLEMENTATION-PLAN.md`**; the approved design is
-> **`docs/superpowers/specs/2026-07-22-ad-placr-ad-manager-design.md`**. This file is now just the
-> longer-horizon backlog that sits *beyond* the v1 rebuild.
+> **Current direction (2026-07-26).** Ad Placr uses one complete Ad record. Each Ad owns its display
+> location, rules, Active/Paused status, weighted code versions, mobile code, and statistics. The
+> approved design is `docs/superpowers/specs/2026-07-23-ad-placr-unified-ad-model-design.md`.
 
-## In the v1 rebuild (see IMPLEMENTATION-PLAN.md)
+The 2.7.0 unified model is the foundation. The items below are deliberately deferred and each needs
+its own design before implementation.
 
-Ad + Placement CPTs · canonical position registry (filterable) · weighted rotation (A-B-ready) ·
-content-location + device targeting · native zero-build admin · migration of current footer/in-content
-config · analytics (external hooks + opt-in first-party storage) · shortcode + widget.
+## Near-term, low risk
 
-## Backlog beyond v1 (Ad Inserter-informed, tiered)
+- Debug overlay that highlights inserted Ads and available display locations for administrators.
+- Import/export of Ads as JSON for staging and backup.
+- `ads.txt` management.
+- Custom or anti-adblock wrapper-class setting.
+- Gutenberg block for an Ad whose display location is **Manual block**.
+- Statistics charts beyond the current aggregate and per-version list figures.
 
-Deferred deliberately (YAGNI). Each becomes its own spec when picked up.
+## Display-rule depth
 
-### Tier 1 — near-term, low risk
-- **Debug/visualization overlay** — highlight inserted blocks and available positions for admins.
-- **Import / export** of ads + placements (JSON) for staging.
-- **`ads.txt`** management from admin.
-- **Custom / anti-adblock CSS class** naming option.
-- **Gutenberg block** for manual placement (mirrors the shortcode).
-- **Admin analytics charts / dashboards** — graphs beyond Phase 7 list-table impression columns (Phase 6 stores events only).
+- Specific post-ID allow and deny lists.
+- User-role rules.
+- Days-of-week and time-of-day schedules.
+- Fallback Ad when a schedule or visitor rule does not match.
 
-### Tier 2 — targeting depth
-- Taxonomy / category / tag / specific post ID / URL-pattern black + white lists.
-- Visitor rules: logged-in vs guest, user role.
-- Scheduling: start/end date, time, days-of-week, with fallback ad.
+## Performance and delivery
 
-### Tier 3 — performance & delivery
-- Lazy loading (load when visible) + interaction/scroll delay.
-- Full-page-cache-safe rotation (client-side pick).
-- More positions: comments (before/after/between), between blog posts, 404, RSS, AJAX-loaded content.
+- Lazy loading when an Ad becomes visible.
+- Interaction or scroll delay.
+- Full-page-cache-safe client-side version selection.
+- Additional display locations: comments, between blog posts, 404 pages, RSS, and AJAX-loaded
+  content.
 
-### Tier 4 — advanced / product-grade
-- Consent / IAB TCF 2.0 gating (GDPR); insert on consent grant.
-- Ad-block detection + fallback / message / replacement.
-- GEO targeting (country/city; MaxMind / CloudFlare), cache-compatible.
-- Advanced analytics: PDF / public reports, CTR-based rotation optimization, click-fraud / reCAPTCHA.
-- CSS-selector insertion ("before/inside/after any HTML element") — successor to the paragraph regex.
-- Sticky animations (fade/slide/zoom), parallax, background/skin ads.
-- Multisite network defaults; WPML compatibility.
+## Advanced features
+
+- Consent and IAB TCF gating.
+- Ad-block detection with fallback messages or replacement Ads.
+- Cache-compatible country/city rules.
+- Public or PDF statistics reports, click-fraud protection, and carefully reviewed CTR optimization.
+- CSS-selector insertion before, inside, or after a chosen HTML element.
+- Optional sticky animations and background/skin Ads.
+- Multisite defaults and multilingual compatibility.
 
 ## References
 
-- **Ad Inserter** feature set (inspiration only): <https://adinserter.pro/documentation/features>
-- Keep `changelog.md` and version headers aligned with what actually ships.
+- Ad Inserter feature set, for inspiration only:
+  <https://adinserter.pro/documentation/features>
+- Keep `changelog.md` and all version declarations aligned with what actually ships.

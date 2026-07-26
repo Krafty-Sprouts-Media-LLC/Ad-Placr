@@ -300,7 +300,7 @@ final class Ad_Placr_Frontend {
 	 *
 	 * @since 2.7.0
 	 *
-	 * @param int[]            $ad_ids Ad IDs in deterministic query order.
+	 * @param int[]                $ad_ids Ad IDs in deterministic query order.
 	 * @param callable(int):string $render Renderer callback for one Ad ID.
 	 * @return string
 	 */
@@ -357,7 +357,7 @@ final class Ad_Placr_Frontend {
 	 *
 	 * @since 2.7.0
 	 *
-	 * @param int              $breakpoint Resolved specialized mobile maximum.
+	 * @param int               $breakpoint Resolved specialized mobile maximum.
 	 * @param callable():string $render     Renderer callback.
 	 * @return string
 	 */

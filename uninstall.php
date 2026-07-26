@@ -13,6 +13,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'ad_placr_settings' );
 delete_option( 'ad_placr_db_version' );
 delete_option( 'ad_placr_analytics_schema' );
+delete_option( 'ad_placr_unified_migration_map' );
+delete_option( 'ad_placr_unified_migration_lock' );
 
 global $wpdb;
 $table = $wpdb->prefix . 'ad_placr_events';
