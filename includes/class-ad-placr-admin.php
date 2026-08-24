@@ -93,21 +93,21 @@ final class Ad_Placr_Admin {
 		);
 
 		add_meta_box(
-			'ad-placr-code',
-			__( 'Ad code', 'ad-placr' ),
-			array( __CLASS__, 'render_code_meta_box' ),
+			'ad-placr-rules',
+			__( 'Show this ad on…', 'ad-placr' ),
+			array( __CLASS__, 'render_rules_meta_box' ),
 			Ad_Placr_Ad::POST_TYPE,
 			'normal',
 			'high'
 		);
 
 		add_meta_box(
-			'ad-placr-rules',
-			__( 'Where should this ad be shown?', 'ad-placr' ),
-			array( __CLASS__, 'render_rules_meta_box' ),
+			'ad-placr-code',
+			__( 'Ad code', 'ad-placr' ),
+			array( __CLASS__, 'render_code_meta_box' ),
 			Ad_Placr_Ad::POST_TYPE,
 			'normal',
-			'default'
+			'high'
 		);
 
 		add_meta_box(
@@ -200,11 +200,17 @@ final class Ad_Placr_Admin {
 			<div class="ad-placr-field">
 				<label for="ad-placr-position"><strong><?php esc_html_e( 'Display location', 'ad-placr' ); ?></strong></label>
 				<select name="ad_placr_position" id="ad-placr-position" class="widefat" data-ad-placr-location>
-					<option value=""><?php esc_html_e( 'Choose a display location', 'ad-placr' ); ?></option>
-					<?php foreach ( $groups as $group_label => $options ) : ?>
+					<option value="" data-context=""><?php esc_html_e( 'Choose a display location', 'ad-placr' ); ?></option>
+					<?php
+					$all_positions = Ad_Placr_Positions::all();
+					foreach ( $groups as $group_label => $options ) :
+						?>
 						<optgroup label="<?php echo esc_attr( $group_label ); ?>">
-							<?php foreach ( $options as $key => $label ) : ?>
-								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $position, $key ); ?>>
+							<?php
+							foreach ( $options as $key => $label ) :
+								$context = isset( $all_positions[ $key ]['context'] ) ? (string) $all_positions[ $key ]['context'] : '';
+								?>
+								<option value="<?php echo esc_attr( $key ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php selected( $position, $key ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -464,9 +470,9 @@ final class Ad_Placr_Admin {
 		?>
 		<p class="description"><?php esc_html_e( 'By default, this Ad can appear everywhere its display location is available.', 'ad-placr' ); ?></p>
 		<details class="ad-placr-rules" <?php echo $has_rules ? 'open' : ''; ?>>
-			<summary><?php esc_html_e( 'Limit where this Ad appears', 'ad-placr' ); ?></summary>
+			<summary><?php esc_html_e( 'Only show on specific pages, devices, or schedules', 'ad-placr' ); ?></summary>
 			<div class="ad-placr-rules-grid">
-				<fieldset class="ad-placr-field">
+				<fieldset class="ad-placr-field" data-ad-placr-contexts-fieldset>
 					<legend><strong><?php esc_html_e( 'Types of pages', 'ad-placr' ); ?></strong></legend>
 					<p class="description"><?php esc_html_e( 'Leave every option clear to allow all page types.', 'ad-placr' ); ?></p>
 					<?php foreach ( $context_choices as $key => $label ) : ?>
@@ -771,12 +777,29 @@ final class Ad_Placr_Admin {
 			$position = '';
 		}
 
-		$posted_versions  = isset( $_POST['ad_placr_versions'] )
+		$posted_versions = isset( $_POST['ad_placr_versions'] )
 			? wp_unslash( $_POST['ad_placr_versions'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each row is normalized below.
 			: array();
-		$posted_versions  = is_array( $posted_versions ) ? $posted_versions : array();
-		$versions         = self::normalize_version_rows( $posted_versions, current_user_can( 'unfiltered_html' ) );
-		$targeting        = self::normalize_targeting_request();
+		$posted_versions = is_array( $posted_versions ) ? $posted_versions : array();
+		$versions        = self::normalize_version_rows( $posted_versions, current_user_can( 'unfiltered_html' ) );
+		$targeting       = self::normalize_targeting_request();
+
+		/*
+		 * Clear page-type contexts when the position already implies a specific
+		 * context. Only global positions (header, footer, sticky) benefit from
+		 * page-type filtering — all other positions are scoped by design, and
+		 * stale checkbox values from a previous selection would be misleading.
+		 */
+		if ( '' !== $position ) {
+			$all_positions    = Ad_Placr_Positions::all();
+			$position_context = isset( $all_positions[ $position ]['context'] )
+				? (string) $all_positions[ $position ]['context']
+				: '';
+
+			if ( 'global' !== $position_context ) {
+				$targeting['contexts'] = array();
+			}
+		}
 		$notes            = isset( $_POST['ad_placr_notes'] )
 			? sanitize_textarea_field( wp_unslash( (string) $_POST['ad_placr_notes'] ) )
 			: '';

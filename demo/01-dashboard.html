@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!--
+	/**
+	 * Ad Placr - Ads Management Dashboard Demo
+	 *
+	 * Standalone interactive Light Mode HTML demo for the Ad Placr Ads Management Dashboard.
+	 *
+	 * @package AdPlacr
+	 * @since 2.7.0
+	 */
+	-->
+	<title>Ad Placr &mdash; Ads Management Dashboard</title>
+	<style>
+		/* --- WordPress Admin Color Palette & Variables --- */
+		:root {
+			--wp-blue: #2271b1;
+			--wp-blue-hover: #135e96;
+			--wp-blue-light: #f0f6fc;
+			--wp-bg: #f0f0f1;
+			--wp-card-bg: #ffffff;
+			--wp-text-dark: #1d2327;
+			--wp-text-muted: #646970;
+			--wp-border: #dcdcde;
+			--wp-border-light: #f0f0f1;
+			--wp-active-green: #00a32a;
+			--wp-active-green-bg: #edfaef;
+			--wp-paused-amber: #dba617;
+			--wp-paused-amber-bg: #fcf9e8;
+			--wp-gray-badge: #72777c;
+			--wp-gray-badge-bg: #f6f7f7;
+			--wp-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+			--wp-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+			--radius: 6px;
+			--transition-fast: 0.15s ease;
+			--transition-normal: 0.25s ease;
+		}
+
+		/* --- Global Reset & Base Typography --- */
+		*, *::before, *::after {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			background-color: var(--wp-bg);
+			color: var(--wp-text-dark);
+			font-size: 13px;
+			line-height: 1.5;
+			-webkit-font-smoothing: antialiased;
+			padding-bottom: 40px;
+		}
+
+		/* --- WP Admin Top Header Bar Mockup --- */
+		.wp-admin-bar-mock {
+			height: 32px;
+			background: #1d2327;
+			color: #f0f0f1;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0 16px;
+			font-size: 12px;
+		}
+		.wp-admin-bar-left {
+			display: flex;
+			align-items: center;
+			gap: 16px;
+		}
+		.wp-admin-bar-site {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-weight: 600;
+			color: #f0f0f1;
+			text-decoration: none;
+		}
+		.wp-admin-bar-site svg {
+			fill: currentColor;
+		}
+
+		/* --- Main Wrapper --- */
+		.ad-placr-wrapper {
+			max-width: 1280px;
+			margin: 20px auto;
+			padding: 0 20px;
+		}
+
+		/* --- Header Banner Section --- */
+		.ad-placr-header {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 24px;
+			padding-bottom: 16px;
+			border-bottom: 1px solid var(--wp-border);
+		}
+		.ad-placr-title-group {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+		.ad-placr-logo-icon {
+			width: 38px;
+			height: 38px;
+			background: var(--wp-blue);
+			color: #fff;
+			border-radius: 8px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 4px rgba(34, 113, 177, 0.3);
+		}
+		.ad-placr-title-group h1 {
+			font-size: 23px;
+			font-weight: 600;
+			color: var(--wp-text-dark);
+			line-height: 1.2;
+		}
+		.ad-placr-badge {
+			background: var(--wp-blue-light);
+			color: var(--wp-blue);
+			border: 1px solid rgba(34, 113, 177, 0.2);
+			font-size: 11px;
+			font-weight: 600;
+			padding: 2px 8px;
+			border-radius: 12px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.ad-placr-header-actions {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		/* --- Button Styles --- */
+		.btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			font-size: 13px;
+			font-weight: 500;
+			padding: 8px 14px;
+			border-radius: var(--radius);
+			border: 1px solid transparent;
+			cursor: pointer;
+			transition: all var(--transition-fast);
+			text-decoration: none;
+			white-space: nowrap;
+		}
+		.btn-primary {
+			background: var(--wp-blue);
+			color: #ffffff;
+			border-color: var(--wp-blue);
+		}
+		.btn-primary:hover {
+			background: var(--wp-blue-hover);
+			border-color: var(--wp-blue-hover);
+			box-shadow: 0 2px 4px rgba(19, 94, 150, 0.2);
+		}
+		.btn-secondary {
+			background: var(--wp-card-bg);
+			color: var(--wp-text-dark);
+			border-color: var(--wp-border);
+		}
+		.btn-secondary:hover {
+			background: var(--wp-border-light);
+			border-color: #8c8f94;
+			color: var(--wp-text-dark);
+		}
+		.btn-sm {
+			padding: 4px 10px;
+			font-size: 12px;
+		}
+
+		/* --- Time Range Selector --- */
+		.time-range-group {
+			display: flex;
+			align-items: center;
+			background: var(--wp-card-bg);
+			border: 1px solid var(--wp-border);
+			border-radius: var(--radius);
+			padding: 2px;
+		}
+		.time-range-btn {
+			border: none;
+			background: transparent;
+			padding: 5px 12px;
+			font-size: 12px;
+			font-weight: 500;
+			color: var(--wp-text-muted);
+			border-radius: 4px;
+			cursor: pointer;
+			transition: all var(--transition-fast);
+		}
+		.time-range-btn.active {
+			background: var(--wp-blue-light);
+			color: var(--wp-blue);
+			font-weight: 600;
+		}
+
+		/* --- Metric Summary Cards --- */
+		.metrics-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+			gap: 16px;
+			margin-bottom: 24px;
+		}
+		.metric-card {
+			background: var(--wp-card-bg);
+			border: 1px solid var(--wp-border);
+			border-radius: var(--radius);
+			padding: 18px 20px;
+			box-shadow: var(--wp-shadow);
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			position: relative;
+			overflow: hidden;
+			transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+		}
+		.metric-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+		}
+		.metric-card::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 4px;
+			height: 100%;
+			background: var(--wp-blue);
+		}
+		.metric-card.card-emerald::before { background: var(--wp-active-green); }
+		.metric-card.card-amber::before { background: var(--wp-paused-amber); }
+		.metric-card.card-purple::before { background: #8250df; }
+
+		.metric-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 10px;
+		}
+		.metric-label {
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--wp-text-muted);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.metric-icon {
+			width: 32px;
+			height: 32px;
+			border-radius: 50%;
+			background: var(--wp-border-light);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--wp-text-muted);
+		}
+		.metric-value {
+			font-size: 26px;
+			font-weight: 700;
+			color: var(--wp-text-dark);
+			line-height: 1.2;
+			margin-bottom: 6px;
+		}
+		.metric-footer {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 12px;
+		}
+		.trend-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 2px;
+			font-weight: 600;
+			font-size: 11px;
+			padding: 1px 6px;
+			border-radius: 10px;
+		}
+		.trend-badge.up {
+			background: var(--wp-active-green-bg);
+			color: var(--wp-active-green);
+		}
+		.trend-badge.down {
+			background: #fcf0f0;
+			color: #d9381e;
+		}
+		.trend-text {
+			color: var(--wp-text-muted);
+		}
+
+		/* --- Control Bar (Filters & Search) --- */
+		.control-bar {
+			background: var(--wp-card-bg);
+			border: 1px solid var(--wp-border);
+			border-radius: var(--radius) var(--radius) 0 0;
+			padding: 14px 18px;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			border-bottom: none;
+		}
+		.placement-filters {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 6px;
+		}
+		.filter-pill {
+			background: var(--wp-gray-badge-bg);
+			border: 1px solid var(--wp-border);
+			color: var(--wp-text-dark);
+			padding: 5px 12px;
+			border-radius: 16px;
+			font-size: 12px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all var(--transition-fast);
+		}
+		.filter-pill:hover {
+			background: #e2e4e7;
+		}
+		.filter-pill.active {
+			background: var(--wp-blue);
+			color: #ffffff;
+			border-color: var(--wp-blue);
+		}
+		.search-box {
+			position: relative;
+			min-width: 240px;
+		}
+		.search-box input {
+			width: 100%;
+			padding: 7px 12px 7px 32px;
+			font-size: 13px;
+			border: 1px solid var(--wp-border);
+			border-radius: var(--radius);
+			outline: none;
+			background: #fff;
+			color: var(--wp-text-dark);
+			transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		}
+		.search-box input:focus {
+			border-color: var(--wp-blue);
+			box-shadow: 0 0 0 1px var(--wp-blue);
+		}
+		.search-box svg {
+			position: absolute;
+			left: 10px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: var(--wp-text-muted);
+			pointer-events: none;
+		}
+
+		/* --- Table Container & Styling --- */
+		.table-container {
+			background: var(--wp-card-bg);
+			border: 1px solid var(--wp-border);
+			border-radius: 0 0 var(--radius) var(--radius);
+			box-shadow: var(--wp-shadow);
+			overflow-x: auto;
+		}
+		.wp-list-table {
+			width: 100%;
+			border-collapse: collapse;
+			text-align: left;
+			font-size: 13px;
+		}
+		.wp-list-table th {
+			background: #f6f7f7;
+			color: var(--wp-text-dark);
+			font-weight: 600;
+			padding: 12px 16px;
+			border-bottom: 1px solid var(--wp-border);
+			white-space: nowrap;
+		}
+		.wp-list-table td {
+			padding: 14px 16px;
+			border-bottom: 1px solid var(--wp-border-light);
+			vertical-align: middle;
+			transition: opacity var(--transition-normal), background var(--transition-fast);
+		}
+		.wp-list-table tbody tr:last-child td {
+			border-bottom: none;
+		}
+		.wp-list-table tbody tr:hover td {
+			background: #fafafa;
+		}
+		.wp-list-table tr.paused td {
+			opacity: 0.65;
+		}
+		.wp-list-table tr.paused:hover td {
+			opacity: 0.85;
+		}
+
+		/* --- Row Elements --- */
+		.ad-title-cell {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.ad-title-link {
+			font-weight: 600;
+			color: var(--wp-blue);
+			text-decoration: none;
+			font-size: 14px;
+		}
+		.ad-title-link:hover {
+			color: var(--wp-blue-hover);
+			text-decoration: underline;
+		}
+		.ad-meta {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 11px;
+			color: var(--wp-text-muted);
+		}
+		.ad-id-tag {
+			background: var(--wp-gray-badge-bg);
+			padding: 1px 5px;
+			border-radius: 3px;
+			font-family: monospace;
+			border: 1px solid #e2e4e7;
+		}
+
+		/* --- Toggle Switch --- */
+		.switch-label {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			cursor: pointer;
+			user-select: none;
+		}
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 36px;
+			height: 20px;
+		}
+		.switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0; left: 0; right: 0; bottom: 0;
+			background-color: #c3c4c7;
+			transition: .3s;
+			border-radius: 20px;
+		}
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 14px;
+			width: 14px;
+			left: 3px;
+			bottom: 3px;
+			background-color: white;
+			transition: .3s;
+			border-radius: 50%;
+		}
+		input:checked + .slider {
+			background-color: var(--wp-active-green);
+		}
+		input:checked + .slider:before {
+			transform: translateX(16px);
+		}
+		.status-text {
+			font-size: 12px;
+			font-weight: 600;
+			padding: 2px 8px;
+			border-radius: 10px;
+		}
+		.status-text.active {
+			background: var(--wp-active-green-bg);
+			color: var(--wp-active-green);
+		}
+		.status-text.paused {
+			background: var(--wp-paused-amber-bg);
+			color: var(--wp-paused-amber);
+		}
+
+		/* --- Placement Taxonomy Badge --- */
+		.placement-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 3px 10px;
+			border-radius: 4px;
+			font-size: 11px;
+			font-weight: 600;
+			font-family: monospace;
+			background: var(--wp-blue-light);
+			color: var(--wp-blue);
+			border: 1px solid rgba(34, 113, 177, 0.2);
+		}
+
+		/* --- CTR Badge --- */
+		.ctr-badge {
+			display: inline-block;
+			padding: 2px 8px;
+			border-radius: 12px;
+			font-size: 12px;
+			font-weight: 600;
+		}
+		.ctr-high { background: var(--wp-active-green-bg); color: var(--wp-active-green); }
+		.ctr-mid { background: var(--wp-paused-amber-bg); color: var(--wp-paused-amber); }
+		.ctr-low { background: var(--wp-gray-badge-bg); color: var(--wp-gray-badge); }
+
+		/* --- Action Buttons Column --- */
+		.action-group {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+
+		/* --- Empty State --- */
+		.empty-state {
+			text-align: center;
+			padding: 40px 20px;
+			color: var(--wp-text-muted);
+		}
+		.empty-state svg {
+			margin-bottom: 12px;
+			color: #a7aaad;
+		}
+		.empty-state h3 {
+			font-size: 15px;
+			color: var(--wp-text-dark);
+			margin-bottom: 4px;
+		}
+
+		/* --- Modal Overlay --- */
+		.modal-backdrop {
+			position: fixed;
+			top: 0; left: 0; right: 0; bottom: 0;
+			background: rgba(0, 0, 0, 0.45);
+			backdrop-filter: blur(3px);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 9999;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity var(--transition-normal);
+		}
+		.modal-backdrop.open {
+			opacity: 1;
+			pointer-events: auto;
+		}
+		.modal-card {
+			background: #ffffff;
+			width: 90%;
+			max-width: 640px;
+			border-radius: 8px;
+			box-shadow: var(--wp-shadow-lg);
+			overflow: hidden;
+			transform: translateY(20px);
+			transition: transform var(--transition-normal);
+		}
+		.modal-backdrop.open .modal-card {
+			transform: translateY(0);
+		}
+		.modal-header {
+			padding: 16px 20px;
+			border-bottom: 1px solid var(--wp-border);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			background: #fafafa;
+		}
+		.modal-header h3 {
+			font-size: 16px;
+			font-weight: 600;
+			color: var(--wp-text-dark);
+		}
+		.modal-close {
+			background: none;
+			border: none;
+			font-size: 20px;
+			color: var(--wp-text-muted);
+			cursor: pointer;
+			padding: 0 4px;
+			line-height: 1;
+		}
+		.modal-close:hover { color: var(--wp-text-dark); }
+		.modal-body {
+			padding: 20px;
+		}
+		.code-preview-block {
+			background: #1e1e1e;
+			color: #d4d4d4;
+			padding: 14px 16px;
+			border-radius: 6px;
+			font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+			font-size: 12px;
+			line-height: 1.5;
+			overflow-x: auto;
+			position: relative;
+			margin-bottom: 16px;
+		}
+		.preview-section-title {
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--wp-text-muted);
+			margin-bottom: 6px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+		.mobile-code-box {
+			background: #f6f7f7;
+			border: 1px dashed var(--wp-border);
+			padding: 12px 14px;
+			border-radius: 6px;
+			font-size: 12px;
+		}
+
+		/* --- Toast Notification --- */
+		.toast-container {
+			position: fixed;
+			bottom: 24px;
+			right: 24px;
+			z-index: 10000;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+		.toast {
+			background: var(--wp-text-dark);
+			color: #ffffff;
+			padding: 12px 18px;
+			border-radius: 6px;
+			box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+			font-size: 13px;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			opacity: 0;
+			transform: translateY(10px);
+			transition: all var(--transition-normal);
+		}
+		.toast.show {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		.toast-icon {
+			color: var(--wp-active-green);
+		}
+
+		/* --- Responsive Media Queries --- */
+		@media (max-width: 768px) {
+			.ad-placr-header {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+			.control-bar {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			.search-box {
+				width: 100%;
+			}
+		}
+	</style>
+</head>
+<body>
+
+	<!-- WordPress Top Admin Bar Mockup -->
+	<div class="wp-admin-bar-mock">
+		<div class="wp-admin-bar-left">
+			<a href="#" class="wp-admin-bar-site">
+				<svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/></svg>
+				Krafty Sprouts Publishing Site
+			</a>
+			<span>Dashboard</span>
+		</div>
+		<div>
+			<span>Howdy, Admin</span>
+		</div>
+	</div>
+
+	<!-- Main Container -->
+	<div class="ad-placr-wrapper">
+		
+		<!-- Header Banner -->
+		<header class="ad-placr-header">
+			<div class="ad-placr-title-group">
+				<div class="ad-placr-logo-icon">
+					<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+						<line x1="3" y1="9" x2="21" y2="9"/>
+						<line x1="9" y1="21" x2="9" y2="9"/>
+					</svg>
+				</div>
+				<div>
+					<div style="display:flex; align-items:center; gap:8px;">
+						<h1>Ad Placr</h1>
+						<span class="ad-placr-badge">v2.7.0 Unified</span>
+					</div>
+					<p style="color: var(--wp-text-muted); font-size: 13px;">Centralized WordPress Advertising & Multi-Version Placement Engine</p>
+				</div>
+			</div>
+
+			<div class="ad-placr-header-actions">
+				<div class="time-range-group" id="timeRangeSelector">
+					<button class="time-range-btn" data-range="7d">7 Days</button>
+					<button class="time-range-btn active" data-range="30d">30 Days</button>
+					<button class="time-range-btn" data-range="90d">90 Days</button>
+				</div>
+				<button class="btn btn-primary" onclick="alert('Demo Action: Navigate to Add New Ad Editor');">
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+					Add New Ad
+				</button>
+			</div>
+		</header>
+
+		<!-- Metrics Summary Cards -->
+		<section class="metrics-grid">
+			<!-- Total Impressions -->
+			<div class="metric-card">
+				<div class="metric-header">
+					<span class="metric-label">Total Impressions</span>
+					<div class="metric-icon">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+					</div>
+				</div>
+				<div class="metric-value" id="metricImpressions">345,400</div>
+				<div class="metric-footer">
+					<span class="trend-badge up">↑ 14.2%</span>
+					<span class="trend-text">vs previous period</span>
+				</div>
+			</div>
+
+			<!-- Total Clicks -->
+			<div class="metric-card card-emerald">
+				<div class="metric-header">
+					<span class="metric-label">Total Clicks</span>
+					<div class="metric-icon">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 15l-2 5l-4-9l-5 4v-11h14z"/></svg>
+					</div>
+				</div>
+				<div class="metric-value" id="metricClicks">10,894</div>
+				<div class="metric-footer">
+					<span class="trend-badge up">↑ 8.7%</span>
+					<span class="trend-text">vs previous period</span>
+				</div>
+			</div>
+
+			<!-- Avg. CTR -->
+			<div class="metric-card card-amber">
+				<div class="metric-header">
+					<span class="metric-label">Avg. Click-Through Rate</span>
+					<div class="metric-icon">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+					</div>
+				</div>
+				<div class="metric-value" id="metricCTR">3.15%</div>
+				<div class="metric-footer">
+					<span class="trend-badge up">↑ 0.4%</span>
+					<span class="trend-text">industry avg: 1.9%</span>
+				</div>
+			</div>
+
+			<!-- Active Placements & RPM -->
+			<div class="metric-card card-purple">
+				<div class="metric-header">
+					<span class="metric-label">Active Placements</span>
+					<div class="metric-icon">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+					</div>
+				</div>
+				<div class="metric-value" id="metricActiveCount">4 Active / 2 Paused</div>
+				<div class="metric-footer">
+					<span class="trend-text" id="metricRPM">Est. RPM: $2.45 / 1k imps</span>
+				</div>
+			</div>
+		</section>
+
+		<!-- Controls Bar: Placement Filters & Live Search -->
+		<div class="control-bar">
+			<div class="placement-filters" id="placementFilters">
+				<button class="filter-pill active" data-filter="all">All Placements (6)</button>
+				<button class="filter-pill" data-filter="in_content">In-Content</button>
+				<button class="filter-pill" data-filter="sticky">Sticky Banners</button>
+				<button class="filter-pill" data-filter="header_footer">Header / Footer</button>
+				<button class="filter-pill" data-filter="manual">Sidebar & Manual</button>
+			</div>
+
+			<div class="search-box">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+				<input type="text" id="searchInput" placeholder="Search ads by title, ID, or taxonomy...">
+			</div>
+		</div>
+
+		<!-- Ads Interactive Table -->
+		<div class="table-container">
+			<table class="wp-list-table" id="adsTable">
+				<thead>
+					<tr>
+						<th style="width: 140px;">Status</th>
+						<th>Ad Title &amp; ID</th>
+						<th>Placement Taxonomy Key</th>
+						<th>Code Versions</th>
+						<th>Impressions</th>
+						<th>Clicks</th>
+						<th>CTR %</th>
+						<th style="width: 220px; text-align: right;">Quick Actions</th>
+					</tr>
+				</thead>
+				<tbody id="tableBody">
+					<!-- Row 1: ID 101 -->
+					<tr data-id="101" data-status="active" data-group="in_content" data-search="article body mid-content unit 101 in_content_after_paragraph">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle" checked>
+									<span class="slider"></span>
+								</span>
+								<span class="status-text active">Active</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 101'); return false;">Article Body Mid-Content Unit</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#101</span>
+									<span>Updated 2 days ago</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">in_content_after_paragraph</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">2 Versions</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">Split: 60% / 40%</div>
+						</td>
+						<td class="col-imps">142,500</td>
+						<td class="col-clicks">5,130</td>
+						<td><span class="ctr-badge ctr-high">3.60%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 101');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="101">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="101"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+
+					<!-- Row 2: ID 102 -->
+					<tr data-id="102" data-status="active" data-group="sticky" data-search="sticky bottom anchor banner 102 sticky_footer">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle" checked>
+									<span class="slider"></span>
+								</span>
+								<span class="status-text active">Active</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 102'); return false;">Sticky Bottom Anchor Banner</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#102</span>
+									<span>Updated 4 days ago</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">sticky_footer</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">1 Version</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">100% Traffic</div>
+						</td>
+						<td class="col-imps">89,200</td>
+						<td class="col-clicks">2,497</td>
+						<td><span class="ctr-badge ctr-mid">2.80%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 102');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="102">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="102"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+
+					<!-- Row 3: ID 103 -->
+					<tr data-id="103" data-status="active" data-group="header_footer" data-search="header top announcement ad 103 before_header">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle" checked>
+									<span class="slider"></span>
+								</span>
+								<span class="status-text active">Active</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 103'); return false;">Header Top Announcement Ad</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#103</span>
+									<span>Updated 1 week ago</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">before_header</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">2 Versions</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">Split: 50% / 50%</div>
+						</td>
+						<td class="col-imps">34,100</td>
+						<td class="col-clicks">443</td>
+						<td><span class="ctr-badge ctr-low">1.30%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 103');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="103">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="103"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+
+					<!-- Row 4: ID 104 -->
+					<tr data-id="104" data-status="paused" class="paused" data-group="manual" data-search="sidebar sticky square widget 104 sidebar_widget">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle">
+									<span class="slider"></span>
+								</span>
+								<span class="status-text paused">Paused</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 104'); return false;">Sidebar Sticky Square Widget</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#104</span>
+									<span>Updated 3 weeks ago</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">sidebar_widget</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">1 Version</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">100% Traffic</div>
+						</td>
+						<td class="col-imps">12,400</td>
+						<td class="col-clicks">310</td>
+						<td><span class="ctr-badge ctr-mid">2.50%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 104');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="104">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="104"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+
+					<!-- Row 5: ID 105 -->
+					<tr data-id="105" data-status="active" data-group="manual" data-search="custom promotional banner 105 manual_shortcode">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle" checked>
+									<span class="slider"></span>
+								</span>
+								<span class="status-text active">Active</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 105'); return false;">Custom Promotional Banner</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#105</span>
+									<span>Updated yesterday</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">manual_shortcode</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">3 Versions</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">Split: 40/30/30</div>
+						</td>
+						<td class="col-imps">58,900</td>
+						<td class="col-clicks">2,414</td>
+						<td><span class="ctr-badge ctr-high">4.10%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 105');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="105">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="105"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+
+					<!-- Row 6: ID 106 -->
+					<tr data-id="106" data-status="paused" class="paused" data-group="header_footer" data-search="footer lead capture unit 106 before_footer">
+						<td>
+							<label class="switch-label">
+								<span class="switch">
+									<input type="checkbox" class="status-toggle">
+									<span class="slider"></span>
+								</span>
+								<span class="status-text paused">Paused</span>
+							</label>
+						</td>
+						<td>
+							<div class="ad-title-cell">
+								<a href="#" class="ad-title-link" onclick="alert('Demo: Edit Ad 106'); return false;">Footer Lead Capture Unit</a>
+								<div class="ad-meta">
+									<span class="ad-id-tag">#106</span>
+									<span>Updated 1 month ago</span>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="placement-badge">before_footer</span>
+						</td>
+						<td>
+							<span style="font-weight: 500;">1 Version</span>
+							<div style="font-size:11px; color:var(--wp-text-muted);">100% Traffic</div>
+						</td>
+						<td class="col-imps">8,300</td>
+						<td class="col-clicks">99</td>
+						<td><span class="ctr-badge ctr-low">1.19%</span></td>
+						<td style="text-align: right;">
+							<div class="action-group" style="justify-content: flex-end;">
+								<button class="btn btn-secondary btn-sm" onclick="alert('Demo: Edit Ad 106');">Edit</button>
+								<button class="btn btn-secondary btn-sm btn-snippet" data-id="106">Snippet</button>
+								<button class="btn btn-secondary btn-sm btn-copy" data-shortcode='[ad_placr ad="106"]'>Copy</button>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<!-- Empty State Row (Hidden by default) -->
+			<div class="empty-state" id="emptyState" style="display: none;">
+				<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+				<h3>No Ads Found</h3>
+				<p>No advertising units match your search query or placement filter.</p>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Snippet Modal Overlay -->
+	<div class="modal-backdrop" id="snippetModal">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3 id="modalTitle">View Ad Code Snippet</h3>
+				<button class="modal-close" id="modalClose">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="preview-section-title">Primary HTML / JavaScript Code (Version A)</div>
+				<pre class="code-preview-block" id="modalCodeSnippet"><code>&lt;!-- Ad Placr Engine - Ad #101 --&gt;
+&lt;div class="ad-placr-container ad-pos-in_content_after_paragraph"&gt;
+  &lt;ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-9876543210987654"
+       data-ad-slot="1234567890"
+       data-ad-format="auto"
+       data-full-width-responsive="true"&gt;&lt;/ins&gt;
+  &lt;script&gt;(adsbygoogle = window.adsbygoogle || []).push({});&lt;/script&gt;
+&lt;/div&gt;</code></pre>
+
+				<div class="preview-section-title" style="margin-top: 14px;">Mobile Code Override</div>
+				<div class="mobile-code-box" id="modalMobileSnippet">
+					<strong>Active Mobile Snippet:</strong> Rendered on viewports &lt; 782px (responsive breakpoint).
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Toast Notification Container -->
+	<div class="toast-container" id="toastContainer"></div>
+
+	<!-- Script Logic -->
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+
+			/* --- Mock Data multipliers for Time Ranges --- */
+			const timeRangeData = {
+				'7d': { imps: '81,200', clicks: '2,560', ctr: '3.15%', rpm: 'Est. RPM: $2.40 / 1k imps' },
+				'30d': { imps: '345,400', clicks: '10,894', ctr: '3.15%', rpm: 'Est. RPM: $2.45 / 1k imps' },
+				'90d': { imps: '1,085,200', clicks: '34,200', ctr: '3.15%', rpm: 'Est. RPM: $2.48 / 1k imps' }
+			};
+
+			const rowImpsMap = {
+				'7d': { 101: '33,500', 102: '21,000', 103: '8,000', 104: '2,900', 105: '13,800', 106: '2,000' },
+				'30d': { 101: '142,500', 102: '89,200', 103: '34,100', 104: '12,400', 105: '58,900', 106: '8,300' },
+				'90d': { 101: '448,000', 102: '280,000', 103: '107,000', 104: '39,000', 105: '185,000', 106: '26,200' }
+			};
+
+			/* --- 1. Time Range Selector Handler --- */
+			const rangeButtons = document.querySelectorAll('#timeRangeSelector .time-range-btn');
+			rangeButtons.forEach(btn => {
+				btn.addEventListener('click', () => {
+					rangeButtons.forEach(b => b.classList.remove('active'));
+					btn.classList.add('active');
+
+					const range = btn.getAttribute('data-range');
+					if (timeRangeData[range]) {
+						document.getElementById('metricImpressions').textContent = timeRangeData[range].imps;
+						document.getElementById('metricClicks').textContent = timeRangeData[range].clicks;
+						document.getElementById('metricCTR').textContent = timeRangeData[range].ctr;
+						document.getElementById('metricRPM').textContent = timeRangeData[range].rpm;
+
+						// Update table row impressions for demo realism
+						document.querySelectorAll('#tableBody tr').forEach(tr => {
+							const id = tr.getAttribute('data-id');
+							if (rowImpsMap[range] && rowImpsMap[range][id]) {
+								tr.querySelector('.col-imps').textContent = rowImpsMap[range][id];
+							}
+						});
+					}
+				});
+			});
+
+			/* --- 2. Interactive Status Toggle & Active Metric Count --- */
+			function updateActiveCounts() {
+				const rows = document.querySelectorAll('#tableBody tr');
+				let active = 0;
+				let paused = 0;
+				rows.forEach(r => {
+					const isChecked = r.querySelector('.status-toggle').checked;
+					if (isChecked) active++;
+					else paused++;
+				});
+				document.getElementById('metricActiveCount').textContent = `${active} Active / ${paused} Paused`;
+			}
+
+			document.querySelectorAll('.status-toggle').forEach(toggle => {
+				toggle.addEventListener('change', (e) => {
+					const row = e.target.closest('tr');
+					const statusText = row.querySelector('.status-text');
+					if (e.target.checked) {
+						row.classList.remove('paused');
+						row.setAttribute('data-status', 'active');
+						statusText.textContent = 'Active';
+						statusText.className = 'status-text active';
+						showToast(`Ad #${row.getAttribute('data-id')} activated successfully.`);
+					} else {
+						row.classList.add('paused');
+						row.setAttribute('data-status', 'paused');
+						statusText.textContent = 'Paused';
+						statusText.className = 'status-text paused';
+						showToast(`Ad #${row.getAttribute('data-id')} paused.`);
+					}
+					updateActiveCounts();
+				});
+			});
+
+			/* --- 3. Filtering Logic (Placement Filter & Search Input) --- */
+			let currentFilter = 'all';
+			let searchQuery = '';
+
+			const filterPills = document.querySelectorAll('#placementFilters .filter-pill');
+			const searchInput = document.getElementById('searchInput');
+
+			function applyFilters() {
+				const rows = document.querySelectorAll('#tableBody tr');
+				let visibleCount = 0;
+
+				rows.forEach(row => {
+					const rowGroup = row.getAttribute('data-group');
+					const rowSearch = row.getAttribute('data-search').toLowerCase();
+
+					const matchesFilter = (currentFilter === 'all' || rowGroup === currentFilter);
+					const matchesSearch = searchQuery === '' || rowSearch.includes(searchQuery);
+
+					if (matchesFilter && matchesSearch) {
+						row.style.display = '';
+						visibleCount++;
+					} else {
+						row.style.display = 'none';
+					}
+				});
+
+				const emptyState = document.getElementById('emptyState');
+				const table = document.getElementById('adsTable');
+				if (visibleCount === 0) {
+					emptyState.style.display = 'block';
+					table.style.display = 'none';
+				} else {
+					emptyState.style.display = 'none';
+					table.style.display = 'table';
+				}
+			}
+
+			filterPills.forEach(pill => {
+				pill.addEventListener('click', () => {
+					filterPills.forEach(p => p.classList.remove('active'));
+					pill.classList.add('active');
+					currentFilter = pill.getAttribute('data-filter');
+					applyFilters();
+				});
+			});
+
+			searchInput.addEventListener('input', (e) => {
+				searchQuery = e.target.value.trim().toLowerCase();
+				applyFilters();
+			});
+
+			/* --- 4. View Code Snippet Modal --- */
+			const modal = document.getElementById('snippetModal');
+			const modalClose = document.getElementById('modalClose');
+
+			document.querySelectorAll('.btn-snippet').forEach(btn => {
+				btn.addEventListener('click', () => {
+					const id = btn.getAttribute('data-id');
+					document.getElementById('modalTitle').textContent = `View Ad Code Snippet (#${id})`;
+					modal.classList.add('open');
+				});
+			});
+
+			modalClose.addEventListener('click', () => {
+				modal.classList.remove('open');
+			});
+
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) {
+					modal.classList.remove('open');
+				}
+			});
+
+			/* --- 5. Copy Shortcode & Toast Notification --- */
+			document.querySelectorAll('.btn-copy').forEach(btn => {
+				btn.addEventListener('click', () => {
+					const shortcode = btn.getAttribute('data-shortcode');
+					if (navigator.clipboard) {
+						navigator.clipboard.writeText(shortcode);
+					}
+					showToast(`Copied shortcode <strong>${shortcode}</strong> to clipboard!`);
+				});
+			});
+
+			function showToast(message) {
+				const container = document.getElementById('toastContainer');
+				const toast = document.createElement('div');
+				toast.className = 'toast';
+				toast.innerHTML = `
+					<svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+					<span>${message}</span>
+				`;
+				container.appendChild(toast);
+
+				// Trigger animation
+				setTimeout(() => toast.classList.add('show'), 10);
+
+				// Auto remove after 3s
+				setTimeout(() => {
+					toast.classList.remove('show');
+					setTimeout(() => toast.remove(), 300);
+				}, 3000);
+			}
+
+		});
+	</script>
+</body>
+</html>

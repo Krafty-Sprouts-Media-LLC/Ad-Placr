@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Placr - Edit Ad: In-Article High Impact Banner</title>
+    <!--
+      Ad Placr - Single Ad Unified Editor Demo
+      @package AdPlacr
+      @since 2.7.0
+    -->
+    <style>
+        /* Modern WordPress Admin Styling System */
+        :root {
+            --wp-admin-bg: #f0f0f1;
+            --wp-blue: #2271b1;
+            --wp-blue-hover: #135e96;
+            --wp-blue-light: #f0f6fc;
+            --wp-text-main: #1d2327;
+            --wp-text-muted: #646970;
+            --wp-border: #c3c4c7;
+            --wp-border-light: #dcdcde;
+            --wp-card-bg: #ffffff;
+            --wp-success: #00a32a;
+            --wp-warning: #dba617;
+            --wp-danger: #d63638;
+            --wp-sidebar-bg: #1d2327;
+            --wp-sidebar-hover: #2c3338;
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background-color: var(--wp-admin-bg);
+            color: var(--wp-text-main);
+            font-size: 13px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Admin Bar Mock */
+        .wp-admin-bar {
+            height: 32px;
+            background: var(--wp-sidebar-bg);
+            color: #f0f0f1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .wp-admin-bar .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .wp-admin-bar .brand-icon {
+            width: 18px;
+            height: 18px;
+            background: var(--wp-blue);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* App Wrapper */
+        .app-wrapper {
+            display: flex;
+            min-height: calc(100vh - 32px);
+        }
+
+        /* WP Admin Sidebar Menu Mock */
+        .wp-sidebar {
+            width: 180px;
+            background: var(--wp-sidebar-bg);
+            color: #a7aaad;
+            flex-shrink: 0;
+            padding-top: 12px;
+        }
+
+        .wp-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            color: #f0f0f1;
+            text-decoration: none;
+            font-size: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .wp-menu-item:hover, .wp-menu-item.active {
+            background: var(--wp-blue);
+            color: #ffffff;
+        }
+
+        .wp-menu-item.active {
+            font-weight: 600;
+        }
+
+        /* Main Content Container */
+        .main-container {
+            flex: 1;
+            padding: 24px 32px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Navigation & Title Area */
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            color: var(--wp-text-muted);
+            font-size: 12px;
+        }
+
+        .breadcrumbs a {
+            color: var(--wp-blue);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+
+        .breadcrumbs a:hover {
+            color: var(--wp-blue-hover);
+            text-decoration: underline;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+            background: var(--wp-card-bg);
+            padding: 16px 20px;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .title-input {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--wp-text-main);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 6px 10px;
+            width: 100%;
+            max-width: 500px;
+            transition: var(--transition);
+            background: #fcfcfc;
+        }
+
+        .title-input:hover {
+            border-color: var(--wp-border);
+            background: #fff;
+        }
+
+        .title-input:focus {
+            border-color: var(--wp-blue);
+            background: #fff;
+            outline: none;
+            box-shadow: 0 0 0 1px var(--wp-blue);
+        }
+
+        .status-badge-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            background: #e7f5ea;
+            border: 1px solid #b7e1cd;
+            color: #0d652d;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+        }
+
+        .status-badge-toggle.paused {
+            background: #fcf0e6;
+            border-color: #f7c8a1;
+            color: #b04900;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00a32a;
+        }
+
+        .status-badge-toggle.paused .status-dot {
+            background: #dba617;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .saved-status-indicator {
+            color: var(--wp-text-muted);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--wp-blue);
+            color: #ffffff;
+            border-color: var(--wp-blue);
+        }
+
+        .btn-primary:hover {
+            background: var(--wp-blue-hover);
+            border-color: var(--wp-blue-hover);
+        }
+
+        .btn-secondary {
+            background: #f6f7f7;
+            color: var(--wp-blue);
+            border-color: var(--wp-blue);
+        }
+
+        .btn-secondary:hover {
+            background: #f0f0f1;
+            color: var(--wp-blue-hover);
+        }
+
+        /* Two-Column Editor Layout */
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Main Section Cards */
+        .editor-card {
+            background: var(--wp-card-bg);
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--wp-border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--wp-text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title-icon {
+            color: var(--wp-blue);
+            display: flex;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Section A: Visual Placement Selector */
+        .placement-container {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+
+        .placement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 10px;
+        }
+
+        .placement-tile {
+            border: 1.5px solid var(--wp-border-light);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .placement-tile:hover {
+            border-color: var(--wp-blue);
+            background: var(--wp-blue-light);
+        }
+
+        .placement-tile.active {
+            border-color: var(--wp-blue);
+            background: #f0f6fc;
+            box-shadow: 0 0 0 1px var(--wp-blue);
+        }
+
+        .placement-tile-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--wp-blue);
+            letter-spacing: 0.5px;
+        }
+
+        .placement-tile-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--wp-text-main);
+        }
+
+        .placement-tile-desc {
+            font-size: 11px;
+            color: var(--wp-text-muted);
+            line-height: 1.3;
+        }
+
+        /* Placement Wireframe Mockup */
+        .wireframe-box {
+            background: #f9f9fb;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 11px;
+            user-select: none;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .wf-header {
+            height: 24px;
+            background: #e2e4e7;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            color: #646970;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .wf-hero {
+            height: 36px;
+            background: #eceef0;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8c8f94;
+            font-size: 10px;
+        }
+
+        .wf-body-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .wf-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .wf-paragraph {
+            height: 22px;
+            background: #ffffff;
+            border: 1px dashed #dcdcde;
+            border-radius: 3px;
+            padding: 4px 6px;
+            color: #8c8f94;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+        }
+
+        .wf-sidebar-col {
+            width: 70px;
+            background: #ffffff;
+            border: 1px dashed #dcdcde;
+            border-radius: 3px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .wf-slot {
+            border: 2px dashed #c3c4c7;
+            border-radius: 3px;
+            padding: 4px 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 10px;
+            color: var(--wp-text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(255,255,255,0.7);
+        }
+
+        .wf-slot:hover {
+            border-color: var(--wp-blue);
+            color: var(--wp-blue);
+            background: #ffffff;
+        }
+
+        .wf-slot.active-target {
+            border-style: solid;
+            border-color: var(--wp-blue);
+            background: #2271b1;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(34, 113, 177, 0.4);
+            animation: pulse-slot 2s infinite;
+        }
+
+        @keyframes pulse-slot {
+            0% { box-shadow: 0 0 0 0 rgba(34, 113, 177, 0.5); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 113, 177, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 113, 177, 0); }
+        }
+
+        .wf-footer {
+            height: 24px;
+            background: #e2e4e7;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #646970;
+            font-size: 10px;
+        }
+
+        /* Section B: Code Versions & Mobile Override */
+        .version-tabs-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border-bottom: 1px solid var(--wp-border-light);
+            margin-bottom: 20px;
+        }
+
+        .v-tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--wp-text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .v-tab:hover {
+            color: var(--wp-blue);
+        }
+
+        .v-tab.active {
+            color: var(--wp-blue);
+            border-bottom-color: var(--wp-blue);
+        }
+
+        .v-tab-add {
+            color: var(--wp-blue);
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            background: var(--wp-blue-light);
+            border: 1px dashed var(--wp-blue);
+            font-size: 12px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+        .v-tab-add:hover {
+            background: var(--wp-blue);
+            color: #fff;
+        }
+
+        .weight-slider-group {
+            background: #f6f7f7;
+            border: 1px solid var(--wp-border-light);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .weight-label {
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weight-slider-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .weight-slider {
+            flex: 1;
+            accent-color: var(--wp-blue);
+            height: 6px;
+            cursor: pointer;
+        }
+
+        .weight-percentage {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--wp-blue);
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .code-editor-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .code-textarea {
+            width: 100%;
+            height: 130px;
+            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 12px;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            background: #282c34;
+            color: #abb2bf;
+            resize: vertical;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .code-textarea:focus {
+            border-color: var(--wp-blue);
+            box-shadow: 0 0 0 1px var(--wp-blue);
+        }
+
+        .mobile-override-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--wp-border-light);
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .mobile-override-toggle input {
+            accent-color: var(--wp-blue);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .mobile-code-container {
+            display: none;
+            margin-top: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mobile-code-container.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section C: Targeting & Display Rules Accordion */
+        .rules-counter-pill {
+            background: var(--wp-blue-light);
+            color: var(--wp-blue);
+            border: 1px solid var(--wp-blue);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .accordion-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .accordion-item {
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            background: #fff;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .accordion-header {
+            padding: 12px 16px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .accordion-header:hover {
+            background: #f0f0f1;
+        }
+
+        .accordion-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accordion-icon {
+            color: var(--wp-text-muted);
+            transition: transform 0.2s;
+        }
+
+        .accordion-item.open .accordion-icon {
+            transform: rotate(90deg);
+        }
+
+        .accordion-content {
+            padding: 16px;
+            border-top: 1px solid var(--wp-border-light);
+            display: none;
+            background: #ffffff;
+        }
+
+        .accordion-item.open .accordion-content {
+            display: block;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--wp-text-main);
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            accent-color: var(--wp-blue);
+            width: 15px;
+            height: 15px;
+        }
+
+        /* Section D: Live Ad Sandbox Preview */
+        .preview-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--wp-border-light);
+        }
+
+        .device-toggle-group {
+            display: flex;
+            gap: 4px;
+            background: #f0f0f1;
+            padding: 3px;
+            border-radius: var(--radius-sm);
+        }
+
+        .device-btn {
+            border: none;
+            background: transparent;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--wp-text-muted);
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .device-btn.active {
+            background: #ffffff;
+            color: var(--wp-blue);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sandbox-viewport {
+            background: #f4f5f7;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            transition: var(--transition);
+        }
+
+        .sandbox-viewport.mobile-mode {
+            max-width: 380px;
+            margin: 0 auto;
+        }
+
+        .ad-render-mock {
+            width: 100%;
+            background: #ffffff;
+            border: 1px dashed var(--wp-blue);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: relative;
+        }
+
+        .ad-render-tag {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--wp-text-muted);
+            background: #f0f0f1;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .ad-banner-demo {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            padding: 24px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .ad-banner-demo h4 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .ad-banner-demo p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .ad-banner-demo .ad-cta {
+            background: #ff9900;
+            color: #1d2327;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 12px;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Sidebar Widgets (Right Column) */
+        .sidebar-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-widget {
+            background: var(--wp-card-bg);
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .widget-header {
+            padding: 12px 16px;
+            background: #fafafa;
+            border-bottom: 1px solid var(--wp-border-light);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--wp-text-main);
+        }
+
+        .widget-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--wp-text-main);
+        }
+
+        .radio-option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .radio-option input {
+            accent-color: var(--wp-blue);
+        }
+
+        .copy-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            background: #f9f9f9;
+            overflow: hidden;
+        }
+
+        .copy-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 6px 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--wp-text-main);
+            outline: none;
+        }
+
+        .btn-copy {
+            background: #f0f0f1;
+            border: none;
+            border-left: 1px solid var(--wp-border);
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--wp-blue);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-copy:hover {
+            background: var(--wp-blue);
+            color: #fff;
+        }
+
+        /* Performance Stat Metrics */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border: 1px solid var(--wp-border-light);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+        }
+
+        .stat-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--wp-text-main);
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--wp-text-muted);
+        }
+
+        .ctr-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #e7f5ea;
+            color: #0d652d;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+
+        /* Notes Textarea */
+        .notes-textarea {
+            width: 100%;
+            height: 90px;
+            border: 1px solid var(--wp-border);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-family: inherit;
+            font-size: 12px;
+            resize: vertical;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .notes-textarea:focus {
+            border-color: var(--wp-blue);
+            box-shadow: 0 0 0 1px var(--wp-blue);
+        }
+
+        .notes-timestamp {
+            font-size: 11px;
+            color: var(--wp-text-muted);
+            text-align: right;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- WP Admin Bar Mock -->
+    <div class="wp-admin-bar">
+        <div class="brand">
+            <div class="brand-icon">AP</div>
+            <span>Ad Placr — WordPress Ad Manager</span>
+        </div>
+        <div>
+            <span>Howdy, Admin</span>
+        </div>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- WP Sidebar Mock -->
+        <div class="wp-sidebar">
+            <div class="wp-menu-item active">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <span>Ad Placr</span>
+            </div>
+            <div class="wp-menu-item" style="padding-left: 28px; font-size: 12px;">All Ads</div>
+            <div class="wp-menu-item" style="padding-left: 28px; font-size: 12px; color:#fff; font-weight:600;">Add New Ad</div>
+            <div class="wp-menu-item" style="padding-left: 28px; font-size: 12px;">Analytics</div>
+            <div class="wp-menu-item" style="padding-left: 28px; font-size: 12px;">Settings</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- Breadcrumb Navigation -->
+            <div class="breadcrumbs">
+                <a href="01-dashboard.html">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"></path></svg>
+                    Back to Ads Dashboard
+                </a>
+                <span>/</span>
+                <span>Edit Ad #14</span>
+            </div>
+
+            <!-- Header Action Row -->
+            <div class="editor-header">
+                <div class="header-title-group">
+                    <input type="text" id="adTitleInput" class="title-input" value="In-Article High Impact Banner" placeholder="Enter Ad Title...">
+                    <div id="statusToggleBadge" class="status-badge-toggle" onclick="toggleAdStatus()">
+                        <span class="status-dot"></span>
+                        <span id="statusToggleText">ACTIVE</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div id="savedBadge" class="saved-status-indicator">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>
+                        <span id="savedBadgeText">Saved</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="triggerSaveAd()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Save Ad
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two-Column Editor Layout -->
+            <div class="editor-grid">
+                <!-- Main Left Column -->
+                <div class="main-column">
+
+                    <!-- Section A: Visual Placement Selector -->
+                    <div class="editor-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-title-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                                </span>
+                                Section A: Visual Placement Selector
+                            </div>
+                            <span class="placement-tile-badge">Canonical Taxonomy</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="placement-container">
+                                <!-- Interactive Placement Grid -->
+                                <div class="placement-grid">
+                                    <div class="placement-tile active" data-pos="in_content_after_paragraph" onclick="selectPlacement('in_content_after_paragraph')">
+                                        <span class="placement-tile-badge">In-Content</span>
+                                        <div class="placement-tile-title">After Paragraph</div>
+                                        <div class="placement-tile-desc">Inject ad code after specific paragraph tag.</div>
+                                    </div>
+                                    <div class="placement-tile" data-pos="sticky_footer" onclick="selectPlacement('sticky_footer')">
+                                        <span class="placement-tile-badge">Sticky</span>
+                                        <div class="placement-tile-title">Sticky Footer Rail</div>
+                                        <div class="placement-tile-desc">Pinned sticky bar overlay at bottom of screen.</div>
+                                    </div>
+                                    <div class="placement-tile" data-pos="before_header" onclick="selectPlacement('before_header')">
+                                        <span class="placement-tile-badge">Header</span>
+                                        <div class="placement-tile-title">Before Header Banner</div>
+                                        <div class="placement-tile-desc">Top notification & promo strip above navbar.</div>
+                                    </div>
+                                    <div class="placement-tile" data-pos="archive_top" onclick="selectPlacement('archive_top')">
+                                        <span class="placement-tile-badge">Archive</span>
+                                        <div class="placement-tile-title">Archive List Top</div>
+                                        <div class="placement-tile-desc">Top of category and tag listing pages.</div>
+                                    </div>
+                                    <div class="placement-tile" data-pos="sidebar_widget" onclick="selectPlacement('sidebar_widget')">
+                                        <span class="placement-tile-badge">Widget</span>
+                                        <div class="placement-tile-title">Sidebar Widget</div>
+                                        <div class="placement-tile-desc">Standard sidebar widget area integration.</div>
+                                    </div>
+                                    <div class="placement-tile" data-pos="manual_shortcode" onclick="selectPlacement('manual_shortcode')">
+                                        <span class="placement-tile-badge">Manual</span>
+                                        <div class="placement-tile-title">Shortcode / Block</div>
+                                        <div class="placement-tile-desc">Embed anywhere using custom shortcode.</div>
+                                    </div>
+                                </div>
+
+                                <!-- Mini Live Wireframe Mockup -->
+                                <div class="wireframe-box">
+                                    <div class="wf-header">
+                                        <span>Website Header</span>
+                                        <div id="wf-before_header" class="wf-slot" onclick="selectPlacement('before_header')">Top Banner Slot</div>
+                                    </div>
+                                    <div class="wf-hero">Hero Navigation Area</div>
+                                    <div class="wf-body-row">
+                                        <div class="wf-content">
+                                            <div class="wf-paragraph">Paragraph 1 text content...</div>
+                                            <div id="wf-in_content_after_paragraph" class="wf-slot active-target" onclick="selectPlacement('in_content_after_paragraph')">★ In-Content (After Paragraph 2)</div>
+                                            <div class="wf-paragraph">Paragraph 2 text content...</div>
+                                            <div id="wf-archive_top" class="wf-slot" onclick="selectPlacement('archive_top')">Archive Top Slot</div>
+                                        </div>
+                                        <div class="wf-sidebar-col">
+                                            <div style="font-size:8px; color:#8c8f94; text-align:center;">Sidebar</div>
+                                            <div id="wf-sidebar_widget" class="wf-slot" onclick="selectPlacement('sidebar_widget')">Sidebar Widget</div>
+                                        </div>
+                                    </div>
+                                    <div class="wf-footer">Website Footer Area</div>
+                                    <div id="wf-sticky_footer" class="wf-slot" onclick="selectPlacement('sticky_footer')">Sticky Footer Bar</div>
+                                </div>
+                            </div>
+
+                            <!-- Position Options (Dynamic based on selected placement) -->
+                            <div id="positionOptions" style="margin-top: 16px; padding: 12px 16px; background: #f6f7f7; border-radius: 4px; border: 1px solid #dcdcde; display: flex; align-items: center; gap: 16px;">
+                                <label style="font-weight: 600; font-size: 12px;">Paragraph Target Index:</label>
+                                <input type="number" id="paragraphIndexInput" value="2" min="1" max="20" style="width: 70px; padding: 4px 8px; border: 1px solid var(--wp-border); border-radius: 3px;">
+                                <span style="font-size: 11px; color: var(--wp-text-muted);">Inject ad code after the 2nd &lt;p&gt; tag in post content.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section B: Weighted Code Versions & Mobile Snippets -->
+                    <div class="editor-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-title-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                                </span>
+                                Section B: Weighted Code Versions & Mobile Override
+                            </div>
+                            <span style="font-size: 11px; color: var(--wp-blue); font-weight: 600;">A/B Rotation Active</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Version Tabs -->
+                            <div class="version-tabs-nav">
+                                <div class="v-tab active" onclick="switchVersionTab('A')">
+                                    Version A (Default)
+                                </div>
+                                <div class="v-tab" onclick="switchVersionTab('B')">
+                                    Version B (High CTR Test)
+                                </div>
+                                <button class="v-tab-add" onclick="addNewVersionTab()">+ Add Version</button>
+                            </div>
+
+                            <!-- Weight Slider Group -->
+                            <div class="weight-slider-group">
+                                <div class="weight-label">
+                                    <span>Rotation Weight:</span>
+                                </div>
+                                <div class="weight-slider-wrapper">
+                                    <input type="range" id="weightSliderA" class="weight-slider" min="0" max="100" value="60" oninput="updateWeight('A', this.value)">
+                                    <span id="weightValA" class="weight-percentage">60%</span>
+                                </div>
+                            </div>
+
+                            <!-- Code Editor Area -->
+                            <div class="code-editor-box">
+                                <label class="field-label" style="display:flex; justify-content:space-between;">
+                                    <span>HTML / AdSense Code Snippet:</span>
+                                    <span style="color:var(--wp-text-muted); font-weight:normal; font-size:11px;">Supports raw HTML, JS & iFrame tags</span>
+                                </label>
+                                <textarea id="codeTextareaA" class="code-textarea" oninput="updateSandboxPreview()">&lt;div class="ad-banner-demo"&gt;
+  &lt;div&gt;
+    &lt;h4&gt;🚀 Special Offer: 50% Off Annual Plan&lt;/h4&gt;
+    &lt;p&gt;Upgrade today to unlock all premium features and priority support.&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;a href="#" class="ad-cta"&gt;Claim Offer &amp;rarr;&lt;/a&gt;
+&lt;/div&gt;</textarea>
+                            </div>
+
+                            <!-- Mobile Code Override Checkbox -->
+                            <label class="mobile-override-toggle">
+                                <input type="checkbox" id="mobileOverrideCheckbox" onchange="toggleMobileCodeContainer()">
+                                <span>Enable Custom Mobile Code Override (Render different code on mobile devices)</span>
+                            </label>
+
+                            <div id="mobileCodeContainer" class="mobile-code-container">
+                                <div class="code-editor-box" style="margin-top: 12px;">
+                                    <label class="field-label">Mobile Specific Snippet (Viewport &lt; 782px):</label>
+                                    <textarea id="mobileCodeTextarea" class="code-textarea" style="height: 100px;">&lt;div class="ad-banner-demo" style="flex-direction:column; text-align:center;"&gt;
+  &lt;h4&gt;🚀 50% Off Annual Plan&lt;/h4&gt;
+  &lt;a href="#" class="ad-cta" style="width:100%; margin-top:8px;"&gt;Claim Offer &amp;rarr;&lt;/a&gt;
+&lt;/div&gt;</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section C: Targeting & Display Rules Accordion -->
+                    <div class="editor-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-title-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                </span>
+                                Section C: Display & Targeting Rules
+                            </div>
+                            <span id="activeRulesCounter" class="rules-counter-pill">3 Active Rules</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion-group">
+                                <!-- Rule 1: Post Types -->
+                                <div class="accordion-item open">
+                                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                                        <div class="accordion-header-left">
+                                            <svg class="accordion-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                                            <span>Post Types Filter</span>
+                                        </div>
+                                        <span style="font-size: 11px; color: var(--wp-text-muted);">Posts, Pages</span>
+                                    </div>
+                                    <div class="accordion-content">
+                                        <div class="checkbox-grid">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Posts (post)</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Pages (page)</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" onchange="updateRulesCount()">
+                                                <span>Products (product)</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" onchange="updateRulesCount()">
+                                                <span>Documentation (docs)</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rule 2: Categories -->
+                                <div class="accordion-item">
+                                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                                        <div class="accordion-header-left">
+                                            <svg class="accordion-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                                            <span>Category & Taxonomy Targeting</span>
+                                        </div>
+                                        <span style="font-size: 11px; color: var(--wp-text-muted);">All Categories</span>
+                                    </div>
+                                    <div class="accordion-content">
+                                        <div class="checkbox-grid">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Technology</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Design</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" onchange="updateRulesCount()">
+                                                <span>Marketing</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" onchange="updateRulesCount()">
+                                                <span>Tutorials</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rule 3: User Roles -->
+                                <div class="accordion-item">
+                                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                                        <div class="accordion-header-left">
+                                            <svg class="accordion-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                                            <span>User Role Gating</span>
+                                        </div>
+                                        <span style="font-size: 11px; color: var(--wp-text-muted);">Hide for Admins</span>
+                                    </div>
+                                    <div class="accordion-content">
+                                        <div class="checkbox-grid">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Guest Visitors</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" checked onchange="updateRulesCount()">
+                                                <span>Subscribers</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" onchange="updateRulesCount()">
+                                                <span>Hide from Administrators</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section D: Live Ad Sandbox Preview Box -->
+                    <div class="editor-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-title-icon">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </span>
+                                Section D: Live Ad Sandbox Preview
+                            </div>
+                            <span style="font-size: 11px; color: var(--wp-text-muted);">Real-time DOM Sandbox</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="preview-controls">
+                                <div class="device-toggle-group">
+                                    <button class="device-btn active" id="btnDesktopView" onclick="setDeviceView('desktop')">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        Desktop View
+                                    </button>
+                                    <button class="device-btn" id="btnMobileView" onclick="setDeviceView('mobile')">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                        Mobile View (375px)
+                                    </button>
+                                </div>
+                                <span style="font-size: 11px; color: var(--wp-text-muted);">Rendering Version A</span>
+                            </div>
+
+                            <div id="sandboxViewport" class="sandbox-viewport">
+                                <div class="ad-render-mock">
+                                    <span class="ad-render-tag">Ad Placr Output</span>
+                                    <div id="sandboxRenderArea">
+                                        <div class="ad-banner-demo">
+                                            <div>
+                                                <h4>🚀 Special Offer: 50% Off Annual Plan</h4>
+                                                <p>Upgrade today to unlock all premium features and priority support.</p>
+                                            </div>
+                                            <a href="#" class="ad-cta" onclick="alert('Demo Click Tracked!'); return false;">Claim Offer &rarr;</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Sidebar Right Column -->
+                <div class="sidebar-column">
+
+                    <!-- Widget 1: Publish & Quick Status -->
+                    <div class="sidebar-widget">
+                        <div class="widget-header">Publish & Status</div>
+                        <div class="widget-body">
+                            <div class="field-group">
+                                <label class="field-label">Ad Status:</label>
+                                <div class="radio-option-group">
+                                    <label class="radio-option">
+                                        <input type="radio" name="adStatusRadio" value="active" checked onchange="updateAdStatusFromRadio('active')">
+                                        <span style="color:var(--wp-success); font-weight:600;">Active (Live)</span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="adStatusRadio" value="paused" onchange="updateAdStatusFromRadio('paused')">
+                                        <span style="color:var(--wp-warning); font-weight:600;">Paused</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Shortcode Embed:</label>
+                                <div class="copy-box">
+                                    <input type="text" readonly class="copy-input" value='[ad_placr ad="14"]' id="shortcodeVal">
+                                    <button class="btn-copy" onclick="copyShortcode()">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">PHP Function:</label>
+                                <div class="copy-box">
+                                    <input type="text" readonly class="copy-input" value='ad_placr_show_ad(14);' id="phpCodeVal">
+                                    <button class="btn-copy" onclick="copyPhpCode()">Copy</button>
+                                </div>
+                            </div>
+
+                            <div style="font-size: 11px; color: var(--wp-text-muted); border-top: 1px solid var(--wp-border-light); padding-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                                <div><strong>Created:</strong> July 22, 2026 at 10:14 AM</div>
+                                <div><strong>Last Modified:</strong> Today at 01:55 PM</div>
+                                <div><strong>Ad ID:</strong> #14</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget 2: Performance Summary -->
+                    <div class="sidebar-widget">
+                        <div class="widget-header">Performance Summary</div>
+                        <div class="widget-body">
+                            <div class="stat-grid">
+                                <div class="stat-card">
+                                    <div class="stat-val">45,210</div>
+                                    <div class="stat-lbl">Impressions</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-val">1,356</div>
+                                    <div class="stat-lbl">Clicks</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="field-label">Click-Through Rate (CTR):</div>
+                                <div class="ctr-badge">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                    3.00% High Performing
+                                </div>
+                            </div>
+                            <div style="border-top: 1px solid var(--wp-border-light); padding-top: 10px;">
+                                <div class="field-label" style="margin-bottom:6px;">Version Performance Split:</div>
+                                <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span>Version A (60% weight):</span>
+                                        <strong>3.12% CTR</strong>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between;">
+                                        <span>Version B (40% weight):</span>
+                                        <strong>2.85% CTR</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Widget 3: Private Admin Notes -->
+                    <div class="sidebar-widget">
+                        <div class="widget-header">Private Admin Notes</div>
+                        <div class="widget-body">
+                            <textarea id="privateNotes" class="notes-textarea" placeholder="Add private notes for internal team reference..." oninput="handleNotesInput()">Summer Promo banner campaign. Running until end of Q3. Target CTR threshold: > 2.5%.</textarea>
+                            <div id="notesTimestamp" class="notes-timestamp">Auto-saved just now</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded Dynamic Interactive Script -->
+    <script>
+        // State Management
+        let currentStatus = 'active';
+        let currentPlacement = 'in_content_after_paragraph';
+        let activeVersion = 'A';
+        let deviceView = 'desktop';
+
+        // 1. Toggle Ad Status (Active / Paused)
+        function toggleAdStatus() {
+            if (currentStatus === 'active') {
+                currentStatus = 'paused';
+            } else {
+                currentStatus = 'active';
+            }
+            updateStatusUI();
+        }
+
+        function updateAdStatusFromRadio(val) {
+            currentStatus = val;
+            updateStatusUI();
+        }
+
+        function updateStatusUI() {
+            const badge = document.getElementById('statusToggleBadge');
+            const text = document.getElementById('statusToggleText');
+            const radioActive = document.querySelector('input[name="adStatusRadio"][value="active"]');
+            const radioPaused = document.querySelector('input[name="adStatusRadio"][value="paused"]');
+
+            if (currentStatus === 'active') {
+                badge.classList.remove('paused');
+                text.innerText = 'ACTIVE';
+                if (radioActive) radioActive.checked = true;
+            } else {
+                badge.classList.add('paused');
+                text.innerText = 'PAUSED';
+                if (radioPaused) radioPaused.checked = true;
+            }
+            triggerSaveAdNotification('Status updated');
+        }
+
+        // 2. Select Placement
+        function selectPlacement(posKey) {
+            currentPlacement = posKey;
+
+            // Update Grid Cards
+            const tiles = document.querySelectorAll('.placement-tile');
+            tiles.forEach(tile => {
+                if (tile.getAttribute('data-pos') === posKey) {
+                    tile.classList.add('active');
+                } else {
+                    tile.classList.remove('active');
+                }
+            });
+
+            // Update Wireframe Highlights
+            const wfSlots = document.querySelectorAll('.wf-slot');
+            wfSlots.forEach(slot => {
+                if (slot.id === 'wf-' + posKey) {
+                    slot.classList.add('active-target');
+                } else {
+                    slot.classList.remove('active-target');
+                }
+            });
+
+            // Show/Hide Position Specific Options
+            const optBox = document.getElementById('positionOptions');
+            if (posKey === 'in_content_after_paragraph') {
+                optBox.style.display = 'flex';
+            } else {
+                optBox.style.display = 'none';
+            }
+        }
+
+        // 3. Weight Slider Auto-Balancing
+        function updateWeight(ver, val) {
+            val = parseInt(val, 10);
+            document.getElementById('weightValA').innerText = val + '%';
+        }
+
+        // 4. Mobile Override Container Toggle
+        function toggleMobileCodeContainer() {
+            const chk = document.getElementById('mobileOverrideCheckbox');
+            const container = document.getElementById('mobileCodeContainer');
+            if (chk.checked) {
+                container.classList.add('show');
+            } else {
+                container.classList.remove('show');
+            }
+            updateSandboxPreview();
+        }
+
+        // 5. Version Tabs
+        function switchVersionTab(ver) {
+            activeVersion = ver;
+            const tabs = document.querySelectorAll('.v-tab');
+            tabs.forEach((tab, index) => {
+                if ((ver === 'A' && index === 0) || (ver === 'B' && index === 1)) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            updateSandboxPreview();
+        }
+
+        function addNewVersionTab() {
+            alert('Version C added! Weight auto-balanced to 33% per version.');
+        }
+
+        // 6. Device View Switcher
+        function setDeviceView(mode) {
+            deviceView = mode;
+            const btnDesk = document.getElementById('btnDesktopView');
+            const btnMob = document.getElementById('btnMobileView');
+            const viewport = document.getElementById('sandboxViewport');
+
+            if (mode === 'desktop') {
+                btnDesk.classList.add('active');
+                btnMob.classList.remove('active');
+                viewport.classList.remove('mobile-mode');
+            } else {
+                btnMob.classList.add('active');
+                btnDesk.classList.remove('active');
+                viewport.classList.add('mobile-mode');
+            }
+            updateSandboxPreview();
+        }
+
+        // 7. Update Live Sandbox Preview
+        function updateSandboxPreview() {
+            const renderArea = document.getElementById('sandboxRenderArea');
+            const isMobile = (deviceView === 'mobile');
+            const mobileOverrideActive = document.getElementById('mobileOverrideCheckbox').checked;
+
+            if (isMobile && mobileOverrideActive) {
+                const mobCode = document.getElementById('mobileCodeTextarea').value;
+                renderArea.innerHTML = mobCode;
+            } else {
+                const mainCode = document.getElementById('codeTextareaA').value;
+                renderArea.innerHTML = mainCode;
+            }
+        }
+
+        // 8. Accordion Toggle
+        function toggleAccordion(headerEl) {
+            const item = headerEl.parentElement;
+            item.classList.toggle('open');
+        }
+
+        function updateRulesCount() {
+            const checkboxes = document.querySelectorAll('.accordion-content input[type="checkbox"]:checked');
+            const counter = document.getElementById('activeRulesCounter');
+            counter.innerText = checkboxes.length + ' Active Rules';
+        }
+
+        // 9. Save Ad Action
+        function triggerSaveAd() {
+            const savedText = document.getElementById('savedBadgeText');
+            savedText.innerText = 'Saving...';
+            setTimeout(() => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                savedText.innerText = 'Saved at ' + timeStr;
+            }, 500);
+        }
+
+        function triggerSaveAdNotification(msg) {
+            const savedText = document.getElementById('savedBadgeText');
+            savedText.innerText = msg;
+            setTimeout(() => {
+                savedText.innerText = 'Saved';
+            }, 1500);
+        }
+
+        // 10. Copy Helpers
+        function copyShortcode() {
+            const input = document.getElementById('shortcodeVal');
+            navigator.clipboard.writeText(input.value);
+            alert('Shortcode copied to clipboard: ' + input.value);
+        }
+
+        function copyPhpCode() {
+            const input = document.getElementById('phpCodeVal');
+            navigator.clipboard.writeText(input.value);
+            alert('PHP snippet copied to clipboard!');
+        }
+
+        // 11. Notes Auto-Save
+        let notesTimer;
+        function handleNotesInput() {
+            const ts = document.getElementById('notesTimestamp');
+            ts.innerText = 'Typing...';
+            clearTimeout(notesTimer);
+            notesTimer = setTimeout(() => {
+                const now = new Date();
+                ts.innerText = 'Auto-saved at ' + now.toLocaleTimeString();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

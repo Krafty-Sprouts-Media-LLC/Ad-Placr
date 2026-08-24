@@ -46,7 +46,13 @@
 	}
 
 	/**
-	 * Reveal only controls associated with the selected display location.
+	 * Reveal only controls associated with the selected display location,
+	 * and toggle the page-type contexts fieldset based on position context.
+	 *
+	 * Positions with context "global" (or no selection) show the contexts
+	 * fieldset because those positions fire sitewide. All other contexts
+	 * (singular, front_page, blog_index, archive, manual, widget) hide it
+	 * because the position already implies or ignores the page type.
 	 */
 	function updateLocationControls() {
 		const select = document.querySelector( '[data-ad-placr-location]' );
@@ -55,10 +61,21 @@
 			return;
 		}
 
+		/* Toggle position-specific sub-controls (paragraph number, shortcode hint, etc.). */
 		document.querySelectorAll( '[data-ad-placr-location-control]' ).forEach( function( control ) {
 			const locations = control.getAttribute( 'data-ad-placr-location-control' ).split( /\s+/ );
 			control.hidden = ! locations.includes( select.value );
 		} );
+
+		/* Toggle the "Types of pages" fieldset based on the position's context. */
+		var contextsFieldset = document.querySelector( '[data-ad-placr-contexts-fieldset]' );
+		if ( contextsFieldset ) {
+			var selected = select.options[ select.selectedIndex ];
+			var context = selected ? selected.getAttribute( 'data-context' ) : '';
+
+			/* Only global positions benefit from page-type filtering. */
+			contextsFieldset.hidden = '' !== context && 'global' !== context;
+		}
 	}
 
 	/**

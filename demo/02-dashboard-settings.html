@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Placr — Dashboard &amp; Settings</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f5f5f7;--surface:#fff;--border:rgba(0,0,0,0.06);--accent:#0071e3;--accent-hover:#0062c4;--success:#34c759;--warning:#ff9f0a;--error:#ff3b30;--purple:#af52de;--text:#1d1d1f;--text-sec:#6e6e73;--radius:12px;--tr:0.2s cubic-bezier(.25,.1,.25,1);--sidebar-w:240px;--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:rgba(255,255,255,0.72);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 16px;z-index:100}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:0 8px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sidebar-brand svg{width:28px;height:28px;color:var(--accent)}
+.sidebar-brand span{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.sidebar-brand small{font-size:11px;color:var(--text-sec);margin-left:auto;background:var(--bg);padding:2px 7px;border-radius:8px}
+.nav{list-style:none;flex:1}
+.nav li{margin-bottom:4px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;text-decoration:none;color:var(--text-sec);font-size:14px;font-weight:500;transition:var(--tr)}
+.nav a:hover{background:rgba(0,0,0,0.04);color:var(--text)}
+.nav a.active{background:rgba(0,113,227,0.08);color:var(--accent)}
+.nav a svg{width:18px;height:18px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--success);color:#fff;font-size:11px;font-weight:600;padding:1px 7px;border-radius:10px}
+.sidebar-credit{font-size:11px;color:var(--text-sec);text-align:center;padding-top:16px;border-top:1px solid var(--border)}
+.main{margin-left:var(--sidebar-w);padding:32px 40px;min-height:100vh}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-header h1{font-size:26px;font-weight:700;letter-spacing:-0.5px}
+.btn-primary{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer;transition:var(--tr)}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.btn-secondary{display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.04);color:var(--text-sec);border:none;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;transition:var(--tr)}
+.btn-secondary:hover{background:rgba(0,0,0,0.08);color:var(--text)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;transition:var(--tr)}
+.metric-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+.metric-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.metric-card:nth-child(1)::before{background:var(--accent)}
+.metric-card:nth-child(2)::before{background:var(--success)}
+.metric-card:nth-child(3)::before{background:var(--purple)}
+.metric-card:nth-child(4)::before{background:var(--warning)}
+.metric-label{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-sec);margin-bottom:6px;font-weight:600}
+.metric-value{font-size:28px;font-weight:700;letter-spacing:-0.8px;margin-bottom:4px}
+.metric-trend{font-size:12px;color:var(--success);font-weight:500}
+.metric-sub{font-size:12px;color:var(--text-sec)}
+.quick-stats{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+.stat-pill{padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600}
+.stat-pill.green{background:rgba(52,199,89,0.12);color:#1a8d3a}
+.stat-pill.amber{background:rgba(255,159,10,0.12);color:#b36e00}
+.stat-pill.gray{background:rgba(0,0,0,0.04);color:var(--text-sec)}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-sec);font-weight:600;padding:14px 16px;border-bottom:1px solid var(--border)}
+td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:var(--tr)}
+tbody tr:hover{background:rgba(0,113,227,0.02)}
+tbody tr.dimmed{opacity:0.55}
+.pos-badge{font-family:"SF Mono",SFMono-Regular,Menlo,monospace;font-size:11px;background:var(--bg);padding:3px 8px;border-radius:6px;color:var(--text-sec);white-space:nowrap}
+.ctr-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px}
+.ctr-badge.green{background:rgba(52,199,89,0.12);color:#1a8d3a}
+.ctr-badge.amber{background:rgba(255,159,10,0.12);color:#b36e00}
+.ctr-badge.gray{background:rgba(0,0,0,0.06);color:var(--text-sec)}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#d1d1d6;border-radius:20px;cursor:pointer;transition:var(--tr)}
+.toggle-slider::before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:var(--tr);box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.toggle input:checked+.toggle-slider{background:var(--success)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px)}
+.actions{display:flex;gap:6px}
+.versions-text{font-size:12px;color:var(--text-sec)}
+/* Settings */
+.settings-view{display:none}
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:20px}
+.settings-section h2{font-size:16px;font-weight:600;letter-spacing:-0.2px;margin-bottom:4px}
+.settings-section .section-desc{font-size:13px;color:var(--text-sec);margin-bottom:20px}
+.setting-row{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1;padding-right:24px}
+.setting-info label{font-size:14px;font-weight:500;display:block;margin-bottom:2px;cursor:pointer}
+.setting-info p{font-size:12px;color:var(--text-sec);line-height:1.4}
+.setting-control{flex-shrink:0;display:flex;align-items:center}
+select,input[type="number"],input[type="text"],textarea{font-family:var(--font);font-size:13px;padding:8px 12px;border:1px solid rgba(0,0,0,0.12);border-radius:8px;background:var(--surface);color:var(--text);outline:none;transition:var(--tr)}
+select:focus,input[type="number"]:focus,input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,0.1)}
+input[type="number"]{width:80px}
+input[type="text"]{width:180px}
+select{min-width:140px}
+textarea{width:100%;min-height:70px;resize:vertical;margin-top:8px}
+.checkbox-group{display:flex;gap:12px;flex-wrap:wrap}
+.checkbox-group label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.checkbox-group input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent)}
+.save-bar{text-align:right;margin-top:8px}
+.toast{position:fixed;bottom:32px;right:32px;background:var(--text);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;transform:translateY(10px);transition:var(--tr);pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="22" height="22" rx="5"/><path d="M9 18l4-10 4 10M10.5 15h5"/></svg>
+    <span>Ad Placr</span>
+    <small>v2.7</small>
+  </div>
+  <ul class="nav">
+    <li><a href="#" class="active" data-view="dashboard">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-4 3 3 7-7"/><path d="M14 6h3v3"/></svg>
+      Dashboard</a></li>
+    <li><a href="#" data-view="ads">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+      All Ads <span class="nav-badge">6</span></a></li>
+    <li><a href="#" data-view="settings">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="3"/><path d="M10 1v2m0 14v2m-7-9H1m18 0h-2m-1.3-5.7l-1.4 1.4M5.7 14.3l-1.4 1.4m0-11.4l1.4 1.4m8.6 8.6l1.4 1.4"/></svg>
+      Settings</a></li>
+  </ul>
+  <div class="sidebar-credit">Krafty Sprouts Media</div>
+</aside>
+
+<main class="main">
+  <!-- DASHBOARD VIEW -->
+  <div class="view dashboard-view" id="view-dashboard">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <button class="btn-primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg> Add New Ad</button>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Impressions</div>
+        <div class="metric-value">345.4K</div>
+        <div class="metric-trend">+14.2% vs last period</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Clicks</div>
+        <div class="metric-value">10,894</div>
+        <div class="metric-trend">+8.7% vs last period</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg CTR</div>
+        <div class="metric-value">3.15%</div>
+        <div class="metric-sub">Industry avg: 1.9%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Revenue Est.</div>
+        <div class="metric-value">$847</div>
+        <div class="metric-trend">+12% vs last period</div>
+      </div>
+    </div>
+
+    <div class="quick-stats">
+      <span class="stat-pill green">4 Active</span>
+      <span class="stat-pill amber">2 Paused</span>
+      <span class="stat-pill gray">Last updated: 2 hours ago</span>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Position</th><th>Versions</th><th>Impressions</th><th>CTR</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Article Mid-Content</strong></td>
+            <td><span class="pos-badge">after_paragraph_3</span></td>
+            <td><span class="versions-text">2 versions (60/40)</span></td>
+            <td>142.5K</td>
+            <td><span class="ctr-badge green">3.60%</span></td>
+            <td><label class="toggle"><input type="checkbox" checked data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+          <tr>
+            <td><strong>Sticky Footer Banner</strong></td>
+            <td><span class="pos-badge">sticky_footer</span></td>
+            <td><span class="versions-text">1 version</span></td>
+            <td>89.2K</td>
+            <td><span class="ctr-badge amber">2.80%</span></td>
+            <td><label class="toggle"><input type="checkbox" checked data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+          <tr>
+            <td><strong>Header Announcement</strong></td>
+            <td><span class="pos-badge">before_header</span></td>
+            <td><span class="versions-text">2 versions (50/50)</span></td>
+            <td>34.1K</td>
+            <td><span class="ctr-badge gray">1.30%</span></td>
+            <td><label class="toggle"><input type="checkbox" checked data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+          <tr class="dimmed">
+            <td><strong>Sidebar Widget</strong></td>
+            <td><span class="pos-badge">sidebar_widget</span></td>
+            <td><span class="versions-text">1 version</span></td>
+            <td>12.4K</td>
+            <td><span class="ctr-badge amber">2.50%</span></td>
+            <td><label class="toggle"><input type="checkbox" data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+          <tr>
+            <td><strong>Promo Shortcode</strong></td>
+            <td><span class="pos-badge">manual_shortcode</span></td>
+            <td><span class="versions-text">3 versions</span></td>
+            <td>58.9K</td>
+            <td><span class="ctr-badge green">4.10%</span></td>
+            <td><label class="toggle"><input type="checkbox" checked data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+          <tr class="dimmed">
+            <td><strong>Footer Lead Capture</strong></td>
+            <td><span class="pos-badge">before_footer</span></td>
+            <td><span class="versions-text">1 version</span></td>
+            <td>8.3K</td>
+            <td><span class="ctr-badge gray">1.19%</span></td>
+            <td><label class="toggle"><input type="checkbox" data-row-toggle><span class="toggle-slider"></span></label></td>
+            <td><div class="actions"><button class="btn-secondary">Edit</button><button class="btn-secondary">Duplicate</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view settings-view" id="view-settings">
+    <div class="page-header">
+      <h1>Settings</h1>
+    </div>
+
+    <div class="settings-section">
+      <h2>Statistics &amp; Analytics</h2>
+      <p class="section-desc">Control how Ad Placr tracks and stores performance data.</p>
+      <div class="setting-row">
+        <div class="setting-info"><label>Enable statistics storage</label><p>Store impression and click totals. No personal data collected.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Track per-version stats</label><p>Record performance for each ad code version separately.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Data retention</label><p>How long to keep analytics data before automatic cleanup.</p></div>
+        <div class="setting-control"><select><option>30 days</option><option>60 days</option><option selected>90 days</option><option>180 days</option><option>1 year</option></select></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Show stats in ad list</label><p>Display impression and CTR columns in the Ads list table.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Global Display</h2>
+      <p class="section-desc">Master controls for ad injection behavior across your site.</p>
+      <div class="setting-row">
+        <div class="setting-info"><label>Enable ad injection</label><p>Master switch. Turn off to suppress all automatic ad placements sitewide without deactivating the plugin.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Mobile breakpoint (px)</label><p>Screen width below which mobile ad code is served. WordPress default: 782px.</p></div>
+        <div class="setting-control"><input type="number" value="782"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Lazy load ads</label><p>Delay ad rendering until the placement scrolls into view. Improves page speed.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Default devices</label><p>New ads will target these devices by default.</p></div>
+        <div class="setting-control">
+          <div class="checkbox-group">
+            <label><input type="checkbox" checked> Desktop</label>
+            <label><input type="checkbox" checked> Tablet</label>
+            <label><input type="checkbox" checked> Mobile</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Ad Blocker Handling</h2>
+      <p class="section-desc">Configure behavior when visitors use ad blocking extensions.</p>
+      <div class="setting-row">
+        <div class="setting-info"><label>Detect ad blockers</label><p>Check if visitors are using an ad blocker.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row" style="flex-direction:column;gap:8px">
+        <div class="setting-info"><label>Fallback message</label><p>Shown in place of blocked ads. Leave empty to show nothing.</p></div>
+        <textarea placeholder="It looks like you're using an ad blocker. Ads help us keep this content free."></textarea>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Consent &amp; Privacy</h2>
+      <p class="section-desc">GDPR and consent management integration settings.</p>
+      <div class="setting-row">
+        <div class="setting-info"><label>Require consent before loading ads</label><p>Integrates with popular consent plugins (CookieYes, Complianz, CookieBot). Ads won't load until consent is given.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Consent category</label><p>Which consent category must be granted before ads load.</p></div>
+        <div class="setting-control"><select><option selected>Marketing</option><option>Statistics</option><option>Functional</option></select></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Anonymize analytics</label><p>Don't store IP addresses or user agents in statistics.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>Advanced</h2>
+      <p class="section-desc">Developer and diagnostic options.</p>
+      <div class="setting-row">
+        <div class="setting-info"><label>Update channel</label><p>Choose between stable releases and beta previews.</p></div>
+        <div class="setting-control"><select><option selected>Stable</option><option>Beta</option></select></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Debug mode</label><p>Log ad selection decisions and display rule evaluations to the browser console.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Custom CSS class prefix</label><p>Prefix for all generated wrapper classes.</p></div>
+        <div class="setting-control"><input type="text" value="ad-placr"></div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-info"><label>Disable on AMP pages</label><p>Suppress ad injection on AMP-served pages.</p></div>
+        <div class="setting-control"><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-primary" id="save-btn">Save Settings</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">Settings saved</div>
+
+<script>
+(function() {
+  const navLinks = document.querySelectorAll('.nav a[data-view]');
+  const views = document.querySelectorAll('.view');
+  const toast = document.getElementById('toast');
+
+  // Nav switching
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = this.dataset.view;
+      navLinks.forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+      views.forEach(v => v.style.display = 'none');
+      if (target === 'dashboard' || target === 'ads') {
+        document.getElementById('view-dashboard').style.display = 'block';
+      } else if (target === 'settings') {
+        document.getElementById('view-settings').style.display = 'block';
+      }
+    });
+  });
+
+  // Row toggle (active/paused)
+  document.querySelectorAll('[data-row-toggle]').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+      const row = this.closest('tr');
+      if (this.checked) {
+        row.classList.remove('dimmed');
+      } else {
+        row.classList.add('dimmed');
+      }
+    });
+  });
+
+  // Save settings toast
+  document.getElementById('save-btn').addEventListener('click', function() {
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2200);
+  });
+})();
+</script>
+</body>
+</html>

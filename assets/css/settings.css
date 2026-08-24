@@ -1,0 +1,212 @@
+/**
+ * Settings page styles for the card-based layout.
+ *
+ * @package AdPlacr
+ * @since 2.7.0
+ */
+
+/* --- Page wrapper --- */
+.ad-placr-settings-wrap {
+	max-width: 800px;
+	padding-top: 20px;
+}
+
+.ad-placr-settings-title {
+	font-size: 23px;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.ad-placr-settings-subtitle {
+	color: #646970;
+	font-size: 14px;
+	margin-bottom: 28px;
+}
+
+/* --- Card container --- */
+.ad-placr-settings-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.04 );
+	margin-bottom: 20px;
+	overflow: hidden;
+}
+
+.ad-placr-settings-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 20px 24px;
+	border-bottom: 1px solid #f0f0f1;
+	background: #fafafa;
+}
+
+.ad-placr-settings-card-header h2 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin: 0 0 2px;
+	padding: 0;
+}
+
+.ad-placr-settings-card-header p {
+	font-size: 13px;
+	color: #646970;
+	margin: 0;
+}
+
+/* --- Section icon --- */
+.ad-placr-settings-card-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.ad-placr-settings-card-icon .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.ad-placr-icon-stats {
+	background: rgba( 34, 113, 177, 0.08 );
+	color: #2271b1;
+}
+
+/* --- Card body --- */
+.ad-placr-settings-card-body {
+	padding: 0 24px;
+}
+
+/* --- Setting row --- */
+.ad-placr-setting-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 20px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.ad-placr-setting-row:last-child {
+	border-bottom: none;
+}
+
+.ad-placr-setting-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.ad-placr-setting-info label {
+	display: block;
+	font-size: 14px;
+	font-weight: 500;
+	color: #1d2327;
+	margin-bottom: 2px;
+	cursor: pointer;
+}
+
+.ad-placr-setting-info p {
+	font-size: 12px;
+	color: #646970;
+	margin: 0;
+	line-height: 1.4;
+}
+
+.ad-placr-setting-control {
+	flex-shrink: 0;
+}
+
+/* --- iOS-style toggle --- */
+.ad-placr-toggle {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.ad-placr-toggle input[type="checkbox"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	overflow: hidden;
+	clip: rect( 0, 0, 0, 0 );
+}
+
+.ad-placr-toggle-slider {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 22px;
+	background: #c3c4c7;
+	border-radius: 22px;
+	transition: background 0.2s ease;
+}
+
+.ad-placr-toggle-slider::before {
+	content: "";
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: 3px;
+	top: 3px;
+	background: #fff;
+	border-radius: 50%;
+	transition: transform 0.2s ease;
+	box-shadow: 0 1px 3px rgba( 0, 0, 0, 0.15 );
+}
+
+.ad-placr-toggle input:checked + .ad-placr-toggle-slider {
+	background: #00a32a;
+}
+
+.ad-placr-toggle input:checked + .ad-placr-toggle-slider::before {
+	transform: translateX( 18px );
+}
+
+.ad-placr-toggle input:focus-visible + .ad-placr-toggle-slider {
+	outline: 2px solid var( --wp-admin-theme-color, #2271b1 );
+	outline-offset: 2px;
+}
+
+.ad-placr-toggle-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #646970;
+	min-width: 20px;
+}
+
+/* --- Save button area --- */
+.ad-placr-settings-save {
+	padding-top: 4px;
+}
+
+.ad-placr-settings-save .button-primary {
+	padding: 6px 24px;
+	height: auto;
+	font-size: 14px;
+}
+
+/* --- Responsive --- */
+@media screen and ( max-width: 782px ) {
+	.ad-placr-settings-card-header {
+		padding: 16px;
+	}
+
+	.ad-placr-settings-card-body {
+		padding: 0 16px;
+	}
+
+	.ad-placr-setting-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+}
