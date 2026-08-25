@@ -56,6 +56,13 @@ final class Ad_Placr_Ad {
 	public const META_NOTES = '_ad_placr_notes';
 
 	/**
+	 * Meta key storing the ad alignment preference.
+	 *
+	 * @since 2.8.0
+	 */
+	public const META_ALIGNMENT = '_ad_placr_alignment';
+
+	/**
 	 * Register hooks.
 	 *
 	 * @since 2.0.0
@@ -264,6 +271,34 @@ final class Ad_Placr_Ad {
 		$position = (string) get_post_meta( $ad_id, self::META_POSITION, true );
 
 		return Ad_Placr_Positions::exists( $position ) ? $position : '';
+	}
+
+	/**
+	 * Normalize a submitted alignment value to the stored allow-list.
+	 *
+	 * Unknown values collapse to "none", which renders the ad code untouched.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param mixed $raw Raw value from storage or request.
+	 * @return string One of none, left, center, right.
+	 */
+	public static function normalize_alignment( $raw ): string {
+		$value = is_string( $raw ) ? strtolower( trim( $raw ) ) : '';
+
+		return in_array( $value, array( 'none', 'left', 'center', 'right' ), true ) ? $value : 'none';
+	}
+
+	/**
+	 * Return the saved alignment for an Ad ("none" when unset).
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param int $ad_id Ad ID.
+	 * @return string One of none, left, center, right.
+	 */
+	public static function get_alignment( int $ad_id ): string {
+		return self::normalize_alignment( get_post_meta( $ad_id, self::META_ALIGNMENT, true ) );
 	}
 
 	/**
