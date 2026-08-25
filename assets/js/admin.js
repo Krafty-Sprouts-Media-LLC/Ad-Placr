@@ -552,6 +552,114 @@
 		} );
 	}
 
+	function initializePreview( root ) {
+		const frame = root.querySelector( '[data-ad-placr-preview-frame]' );
+		if ( ! frame ) {
+			return;
+		}
+
+		let device = 'desktop';
+
+		function activeCode() {
+			const panel = document.querySelector( '[data-ad-placr-version-list] > [data-ad-placr-version-row]:not([hidden])' ) ||
+				document.querySelector( '[data-ad-placr-version-row]' );
+			if ( ! panel ) {
+				return '';
+			}
+			const code = panel.querySelector( '[data-ad-placr-version-code]' );
+			const mobile = panel.querySelector( '[data-ad-placr-version-mobile]' );
+			if ( 'mobile' === device && mobile && '' !== mobile.value.trim() ) {
+				return mobile.value;
+			}
+			return code ? code.value : '';
+		}
+
+		function composeSrcdoc() {
+			const input = getPositionInput();
+			const key = input ? input.value : '';
+			const config = getPositionConfig( key );
+			const alignInput = document.querySelector( '[data-ad-placr-alignment-input]' );
+			const align = alignInput ? alignInput.value : 'none';
+			const paraInput = document.getElementById( 'ad-placr-paragraph' );
+			const para = Math.max( 1, Math.min( 100, parseInt( paraInput ? paraInput.value : '1', 10 ) || 1 ) );
+			const code = activeCode();
+			const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[ align ] || 'center';
+			const slotStyle = 'none' === align ? 'width:100%' : 'justify-content:' + justify;
+			const slot = '' === code.trim()
+				? '<div class="empty">Paste ad code to preview it here.</div>'
+				: '<div class="slot" style="' + slotStyle + '"><div class="unit">' + code + '</div></div>';
+
+			let body = '<div class="bar"></div>';
+			if ( config && config.para ) {
+				let i;
+				const before = 'before' === config.para;
+				for ( i = 1; i <= 6; i++ ) {
+					if ( before && i === para ) {
+						body += slot;
+					}
+					body += '<div class="p"></div>';
+					if ( ! before && i === para ) {
+						body += slot;
+					}
+				}
+			} else if ( config && 'sticky' === config.group ) {
+				body += '<div class="p"></div><div class="p"></div><div class="p"></div>';
+				body += slot;
+			} else if ( key ) {
+				body += slot;
+				body += '<div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>';
+			} else {
+				body += slot;
+			}
+
+			return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>' +
+				'html,body{margin:0;background:#fff;color:#1d2327;font:13px/1.5 sans-serif}' +
+				'body.mobile{max-width:380px;margin:0 auto;border-left:1px solid #dcdcde;border-right:1px solid #dcdcde}' +
+				'.bar{height:28px;background:#e2e4e7}' +
+				'.p{height:10px;margin:10px 16px;background:#e3e5e9;border-radius:4px}' +
+				'.slot{display:flex;width:calc(100% - 32px);margin:12px 16px;max-width:100%}' +
+				'.unit{max-width:100%;overflow:auto}' +
+				'.empty{margin:24px 16px;padding:32px;text-align:center;color:#646970;border:1px dashed #c3c4c7}' +
+				'</style></head><body class="' + ( 'mobile' === device ? 'mobile' : '' ) + '">' +
+				body + '</body></html>';
+		}
+
+		function rebuild() {
+			frame.srcdoc = composeSrcdoc();
+		}
+
+		root.addEventListener( 'click', function( event ) {
+			const btn = event.target.closest( '[data-ad-placr-preview-device]' );
+			if ( ! btn ) {
+				return;
+			}
+			device = btn.getAttribute( 'data-ad-placr-preview-device' ) || 'desktop';
+			root.querySelectorAll( '[data-ad-placr-preview-device]' ).forEach( function( el ) {
+				el.classList.toggle( 'is-active', el === btn );
+			} );
+			rebuild();
+		} );
+
+		document.addEventListener( 'input', function( event ) {
+			if ( event.target.closest( '[data-ad-placr-versions], .ad-placr-placement' ) ) {
+				rebuild();
+			}
+		} );
+		document.addEventListener( 'change', function( event ) {
+			if ( event.target.closest( '[data-ad-placr-versions], .ad-placr-placement' ) ) {
+				rebuild();
+			}
+		} );
+		document.addEventListener( 'click', function( event ) {
+			if ( event.target.closest( '[data-ad-placr-spots], [data-ad-placr-areas], .ad-placr-wf-slot, .ad-placr-seg [data-al]' ) ) {
+				window.setTimeout( rebuild, 0 );
+			}
+		} );
+		document.addEventListener( 'ad-placr-version-change', rebuild );
+
+		rebuild();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function() {
 		const placement = document.querySelector( '.ad-placr-placement' );
 		if ( placement ) {
@@ -565,5 +673,10 @@
 		}
 
 		document.querySelectorAll( '[data-ad-placr-versions]' ).forEach( initializeVersions );
+
+		const preview = document.querySelector( '[data-ad-placr-preview]' );
+		if ( preview ) {
+			initializePreview( preview );
+		}
 	} );
 }() );

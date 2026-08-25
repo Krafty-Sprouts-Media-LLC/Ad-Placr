@@ -622,6 +622,25 @@
 	height: 44px;
 }
 
-.ad-placr-wf-stickybar {
-	margin-top: auto;
+.ad-placr-preview-controls {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-bottom: 14px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.ad-placr-preview-controls .description {
+	margin: 0;
+}
+
+.ad-placr-preview-frame {
+	display: block;
+	width: 100%;
+	min-height: 420px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
 }

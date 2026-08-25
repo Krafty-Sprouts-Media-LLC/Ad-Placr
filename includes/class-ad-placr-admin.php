@@ -118,6 +118,16 @@ final class Ad_Placr_Admin {
 			'normal',
 			'default'
 		);
+
+		add_meta_box(
+			'ad-placr-preview',
+			/* translators: Metabox title on the Ad editor screen. */
+			_x( 'Live placement preview', 'editor metabox title', 'ad-placr' ),
+			array( __CLASS__, 'render_preview_meta_box' ),
+			Ad_Placr_Ad::POST_TYPE,
+			'normal',
+			'low'
+		);
 	}
 
 	/**
@@ -847,6 +857,38 @@ final class Ad_Placr_Admin {
 				</tbody>
 			</table>
 		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Render a sandboxed live preview of the current ad code in a page mockup.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param WP_Post $post Current Ad.
+	 * @return void
+	 */
+	public static function render_preview_meta_box( WP_Post $post ): void {
+		if ( ! current_user_can( Ad_Placr_Settings_Page::CAPABILITY ) ) {
+			return;
+		}
+		?>
+		<div class="ad-placr-preview" data-ad-placr-preview data-ad-id="<?php echo esc_attr( (string) $post->ID ); ?>">
+			<div class="ad-placr-preview-controls">
+				<div class="ad-placr-seg" role="radiogroup" aria-label="<?php esc_attr_e( 'Preview device', 'ad-placr' ); ?>">
+					<button type="button" class="is-active" data-ad-placr-preview-device="desktop"><?php esc_html_e( 'Desktop', 'ad-placr' ); ?></button>
+					<button type="button" data-ad-placr-preview-device="mobile"><?php esc_html_e( 'Phone', 'ad-placr' ); ?></button>
+				</div>
+				<p class="description"><?php esc_html_e( 'Indicative only — spacing depends on your theme.', 'ad-placr' ); ?></p>
+			</div>
+			<iframe
+				class="ad-placr-preview-frame"
+				sandbox="allow-scripts allow-popups"
+				title="<?php esc_attr_e( 'Live placement preview', 'ad-placr' ); ?>"
+				loading="lazy"
+				data-ad-placr-preview-frame
+			></iframe>
+		</div>
 		<?php
 	}
 
