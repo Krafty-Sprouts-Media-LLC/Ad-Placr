@@ -26,6 +26,7 @@ final class ManualMetaKeysTest extends TestCase {
 		$this->assertSame( '_ad_placr_targeting', Ad_Placr_Ad::META_TARGETING );
 		$this->assertSame( '_ad_placr_versions', Ad_Placr_Ad::META_VERSIONS );
 		$this->assertSame( '_ad_placr_notes', Ad_Placr_Ad::META_NOTES );
+		$this->assertSame( '_ad_placr_alignment', Ad_Placr_Ad::META_ALIGNMENT );
 	}
 
 	/**

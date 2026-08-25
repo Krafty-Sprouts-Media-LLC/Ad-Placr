@@ -84,6 +84,15 @@ final class Ad_Placr_Admin {
 	 */
 	public static function register_meta_boxes(): void {
 		add_meta_box(
+			'ad-placr-code',
+			__( 'Ad code', 'ad-placr' ),
+			array( __CLASS__, 'render_code_meta_box' ),
+			Ad_Placr_Ad::POST_TYPE,
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
 			'ad-placr-location',
 			__( 'Where should this ad appear?', 'ad-placr' ),
 			array( __CLASS__, 'render_location_meta_box' ),
@@ -94,17 +103,8 @@ final class Ad_Placr_Admin {
 
 		add_meta_box(
 			'ad-placr-rules',
-			__( 'Show this ad on…', 'ad-placr' ),
+			__( 'Who sees it', 'ad-placr' ),
 			array( __CLASS__, 'render_rules_meta_box' ),
-			Ad_Placr_Ad::POST_TYPE,
-			'normal',
-			'high'
-		);
-
-		add_meta_box(
-			'ad-placr-code',
-			__( 'Ad code', 'ad-placr' ),
-			array( __CLASS__, 'render_code_meta_box' ),
 			Ad_Placr_Ad::POST_TYPE,
 			'normal',
 			'high'
@@ -161,6 +161,14 @@ final class Ad_Placr_Admin {
 				'versionLabel'   => __( 'Version', 'ad-placr' ),
 				'versionRemoved' => __( 'Ad version removed.', 'ad-placr' ),
 				'positions'      => self::position_editor_config(),
+				'insertBefore'   => __( 'Insert before paragraph', 'ad-placr' ),
+				'insertAfter'    => __( 'Insert after paragraph', 'ad-placr' ),
+				'scopeNotes'     => array(
+					'global'   => __( 'This spot exists everywhere — use “Page types” below to limit it.', 'ad-placr' ),
+					'singular' => __( 'Scoped automatically to post content. Other page types cannot be added back here.', 'ad-placr' ),
+					'listing'  => __( 'Scoped automatically to its own page type.', 'ad-placr' ),
+					'manual'   => __( 'Rendered wherever you embed it.', 'ad-placr' ),
+				),
 			)
 		);
 	}
@@ -180,8 +188,8 @@ final class Ad_Placr_Admin {
 
 		foreach ( Ad_Placr_Positions::all() as $key => $descriptor ) {
 			$key     = (string) $key;
-			$context = isset( $descriptor['context'] ) ? (string) $descriptor['context'] : '';
-			$group   = isset( $descriptor['group'] ) ? (string) $descriptor['group'] : '';
+			$context = (string) $descriptor['context'];
+			$group   = (string) $descriptor['group'];
 			$rules   = array();
 			$para    = null;
 
@@ -215,7 +223,7 @@ final class Ad_Placr_Admin {
 	}
 
 	/**
-	 * Render status, grouped display locations, and location-specific guidance.
+	 * Render the area/spot placement picker and location-specific controls.
 	 *
 	 * @since 2.7.0
 	 *
@@ -234,30 +242,38 @@ final class Ad_Placr_Admin {
 		$targeting    = wp_parse_args( Ad_Placr_Ad::get_targeting( (int) $post->ID ), self::default_targeting() );
 		$paragraph    = max( 1, min( 100, absint( $targeting['paragraph'] ) ) );
 		$slot_id      = isset( $targeting['slot_id'] ) ? sanitize_key( (string) $targeting['slot_id'] ) : '';
-		$groups       = self::grouped_positions();
+		$alignment    = Ad_Placr_Ad::get_alignment( (int) $post->ID );
+		$devices      = isset( $targeting['devices'] ) && is_array( $targeting['devices'] )
+			? $targeting['devices']
+			: array( 'desktop', 'tablet', 'mobile' );
+		$areas        = self::position_areas();
+		$active_group = '';
+		if ( '' !== $position ) {
+			$all          = Ad_Placr_Positions::all();
+			$active_group = isset( $all[ $position ]['group'] ) ? (string) $all[ $position ]['group'] : '';
+		}
+		$groups = self::grouped_positions();
 		?>
-		<div class="ad-placr-editor-section">
-			<div class="ad-placr-field">
-				<label for="ad-placr-position"><strong><?php esc_html_e( 'Display location', 'ad-placr' ); ?></strong></label>
-				<select name="ad_placr_position" id="ad-placr-position" class="widefat" data-ad-placr-location>
-					<option value="" data-context=""><?php esc_html_e( 'Choose a display location', 'ad-placr' ); ?></option>
-					<?php
-					$all_positions = Ad_Placr_Positions::all();
-					foreach ( $groups as $group_label => $options ) :
-						?>
+		<div class="ad-placr-editor-section ad-placr-placement">
+			<input type="hidden" name="ad_placr_position" id="ad-placr-position" value="<?php echo esc_attr( $position ); ?>" data-ad-placr-position-input data-ad-placr-location />
+
+			<noscript>
+				<label for="ad-placr-position-fallback"><strong><?php esc_html_e( 'Display location', 'ad-placr' ); ?></strong></label>
+				<select name="ad_placr_position_js_fallback_disabled" id="ad-placr-position-fallback" class="widefat">
+					<option value=""><?php esc_html_e( 'Choose a display location', 'ad-placr' ); ?></option>
+					<?php foreach ( $groups as $group_label => $options ) : ?>
 						<optgroup label="<?php echo esc_attr( $group_label ); ?>">
-							<?php
-							foreach ( $options as $key => $label ) :
-								$context = isset( $all_positions[ $key ]['context'] ) ? (string) $all_positions[ $key ]['context'] : '';
-								?>
-								<option value="<?php echo esc_attr( $key ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php selected( $position, $key ); ?>>
+							<?php foreach ( $options as $key => $label ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $position, $key ); ?>>
 									<?php echo esc_html( $label ); ?>
 								</option>
 							<?php endforeach; ?>
 						</optgroup>
 					<?php endforeach; ?>
 				</select>
-			</div>
+			</noscript>
+
+			<p class="description"><?php esc_html_e( 'Two quick picks: 1 an area, then 2 the exact spot — or just click a slot on the mini-page. Only settings relevant to that spot appear afterwards.', 'ad-placr' ); ?></p>
 
 			<?php if ( '' !== $raw_position && '' === $position ) : ?>
 				<div class="notice notice-error inline">
@@ -265,36 +281,187 @@ final class Ad_Placr_Admin {
 				</div>
 			<?php endif; ?>
 
-			<div
-				class="ad-placr-location-control"
-				data-ad-placr-location-control="in_content_before_paragraph in_content_after_paragraph"
-				hidden
-			>
-				<label for="ad-placr-paragraph"><strong><?php esc_html_e( 'Paragraph number', 'ad-placr' ); ?></strong></label>
-				<input type="number" min="1" max="100" step="1" name="ad_placr_paragraph" id="ad-placr-paragraph" value="<?php echo esc_attr( (string) $paragraph ); ?>" />
-				<p class="description"><?php esc_html_e( 'Count paragraphs from the beginning of the main post content.', 'ad-placr' ); ?></p>
+			<div class="ad-placr-placement-grid">
+				<div>
+					<div class="ad-placr-pgroup">
+						<h3><?php esc_html_e( '1 · Pick an area', 'ad-placr' ); ?></h3>
+						<div class="ad-placr-area-grid" data-ad-placr-areas>
+							<?php foreach ( $areas as $group_key => $area ) : ?>
+								<?php
+								$spot_count = count( $area['positions'] );
+								$area_class = 'ad-placr-pcard ad-placr-pcard--area';
+								if ( $group_key === $active_group ) {
+									$area_class .= ' is-active';
+								}
+								?>
+								<button type="button" class="<?php echo esc_attr( $area_class ); ?>" data-area="<?php echo esc_attr( $group_key ); ?>">
+									<span class="ad-placr-pcard-check" aria-hidden="true">&#10003;</span>
+									<span class="ad-placr-pcard-t"><?php echo esc_html( $area['label'] ); ?></span>
+									<span class="ad-placr-pcard-s">
+										<?php
+										echo esc_html( $area['description'] );
+										echo ' · ';
+										echo esc_html(
+											sprintf(
+												/* translators: %d: number of spots in this area. */
+												_n( '%d spot', '%d spots', $spot_count, 'ad-placr' ),
+												$spot_count
+											)
+										);
+										?>
+									</span>
+								</button>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<div class="ad-placr-pgroup ad-placr-spot-group" data-ad-placr-spots <?php echo '' === $active_group ? 'hidden' : ''; ?>>
+						<h3 data-ad-placr-spot-heading><?php esc_html_e( '2 · Pick the exact spot', 'ad-placr' ); ?></h3>
+						<div class="ad-placr-pcards">
+							<?php foreach ( $areas as $group_key => $area ) : ?>
+								<?php foreach ( $area['positions'] as $key => $label ) : ?>
+									<?php
+									$spot_class = 'ad-placr-pcard';
+									if ( $key === $position ) {
+										$spot_class .= ' is-active';
+									}
+									$spot_hidden = $group_key !== $active_group;
+									?>
+									<button
+										type="button"
+										class="<?php echo esc_attr( $spot_class ); ?>"
+										data-pos="<?php echo esc_attr( $key ); ?>"
+										data-group="<?php echo esc_attr( $group_key ); ?>"
+										<?php echo $spot_hidden ? 'hidden' : ''; ?>
+									>
+										<span class="ad-placr-pcard-check" aria-hidden="true">&#10003;</span>
+										<span class="ad-placr-pcard-badge"><?php echo esc_html( self::position_group_badge( $group_key ) ); ?></span>
+										<span class="ad-placr-pcard-t"><?php echo esc_html( $label ); ?></span>
+										<span class="ad-placr-pcard-s"><?php echo esc_html( self::position_scope_label( $key ) ); ?></span>
+									</button>
+								<?php endforeach; ?>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<p class="ad-placr-scope-note description" data-ad-placr-scope-note hidden></p>
+				</div>
+
+				<div class="ad-placr-minimap ad-placr-wf-box">
+					<div class="ad-placr-wf-context-row">
+						<label for="ad-placr-wf-context"><strong><?php esc_html_e( 'Preview page:', 'ad-placr' ); ?></strong></label>
+						<select id="ad-placr-wf-context" data-ad-placr-wf-context>
+							<option value="single"><?php esc_html_e( 'Single post', 'ad-placr' ); ?></option>
+							<option value="front_page"><?php esc_html_e( 'Front page', 'ad-placr' ); ?></option>
+							<option value="blog_index"><?php esc_html_e( 'Blog index', 'ad-placr' ); ?></option>
+							<option value="archive"><?php esc_html_e( 'Archive', 'ad-placr' ); ?></option>
+						</select>
+					</div>
+					<button type="button" class="ad-placr-wf-slot" data-pos="before_header"><?php esc_html_e( 'Top Banner', 'ad-placr' ); ?></button>
+					<div class="ad-placr-wf-header"><?php esc_html_e( 'Header', 'ad-placr' ); ?></div>
+					<button type="button" class="ad-placr-wf-slot" data-pos="after_header"><?php esc_html_e( 'Below Header', 'ad-placr' ); ?></button>
+					<div class="ad-placr-wf-body-row">
+						<div class="ad-placr-wf-content">
+							<button type="button" class="ad-placr-wf-slot" data-pos="front_page_top" hidden><?php esc_html_e( 'Front Top', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="blog_index_top" hidden><?php esc_html_e( 'Blog Top', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="archive_top" hidden><?php esc_html_e( 'Archive Top', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="before_post_content"><?php esc_html_e( 'Above Article', 'ad-placr' ); ?></button>
+							<div class="ad-placr-wf-paragraph"><?php esc_html_e( 'Paragraph 1', 'ad-placr' ); ?></div>
+							<div class="ad-placr-wf-paragraph"><?php esc_html_e( 'Paragraph 2', 'ad-placr' ); ?></div>
+							<button type="button" class="ad-placr-wf-slot" data-pos="in_content"><?php esc_html_e( 'In Content', 'ad-placr' ); ?></button>
+							<div class="ad-placr-wf-paragraph"><?php esc_html_e( 'Paragraph 3', 'ad-placr' ); ?></div>
+							<div class="ad-placr-wf-paragraph"><?php esc_html_e( 'Paragraph 4', 'ad-placr' ); ?></div>
+							<button type="button" class="ad-placr-wf-slot" data-pos="after_post_content"><?php esc_html_e( 'Below Article', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="front_page_bottom" hidden><?php esc_html_e( 'Front Bottom', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="blog_index_bottom" hidden><?php esc_html_e( 'Blog Bottom', 'ad-placr' ); ?></button>
+							<button type="button" class="ad-placr-wf-slot" data-pos="archive_bottom" hidden><?php esc_html_e( 'Archive Bottom', 'ad-placr' ); ?></button>
+						</div>
+						<div class="ad-placr-wf-sidebar-col">
+							<div class="ad-placr-wf-sidebar-label"><?php esc_html_e( 'Sidebar', 'ad-placr' ); ?></div>
+							<button type="button" class="ad-placr-wf-slot" data-pos="sidebar_widget"><?php esc_html_e( 'Widget', 'ad-placr' ); ?></button>
+						</div>
+					</div>
+					<div class="ad-placr-wf-rails">
+						<button type="button" class="ad-placr-wf-slot ad-placr-wf-rail" data-pos="sticky_left_rail"><?php esc_html_e( 'Rail L', 'ad-placr' ); ?></button>
+						<button type="button" class="ad-placr-wf-slot ad-placr-wf-rail" data-pos="sticky_right_rail"><?php esc_html_e( 'Rail R', 'ad-placr' ); ?></button>
+					</div>
+					<div class="ad-placr-wf-footer"><?php esc_html_e( 'Footer', 'ad-placr' ); ?></div>
+					<button type="button" class="ad-placr-wf-slot" data-pos="before_footer"><?php esc_html_e( 'Above Footer', 'ad-placr' ); ?></button>
+					<button type="button" class="ad-placr-wf-slot" data-pos="after_footer"><?php esc_html_e( 'Below Footer', 'ad-placr' ); ?></button>
+					<button type="button" class="ad-placr-wf-slot ad-placr-wf-stickybar" data-pos="sticky_footer"><?php esc_html_e( 'Sticky Bar', 'ad-placr' ); ?></button>
+				</div>
 			</div>
 
-			<div
-				class="ad-placr-location-control"
-				data-ad-placr-location-control="manual_shortcode manual_block"
-				hidden
-			>
-				<p>
-					<?php esc_html_e( 'Place this Ad in content with:', 'ad-placr' ); ?>
-					<code>[ad_placr ad="<?php echo esc_html( (string) $post->ID ); ?>"]</code>
-				</p>
-				<p class="description"><?php esc_html_e( 'You can also choose this Ad from the Ad Placr block when it is available in the editor.', 'ad-placr' ); ?></p>
+			<div class="ad-placr-psettings" data-ad-placr-psettings hidden>
+				<div class="ad-placr-inline-controls">
+					<div
+						class="ad-placr-location-control"
+						data-ad-placr-location-control="in_content_before_paragraph in_content_after_paragraph"
+						hidden
+					>
+						<label for="ad-placr-paragraph"><strong data-ad-placr-para-label><?php esc_html_e( 'Insert after paragraph', 'ad-placr' ); ?></strong></label>
+						<div class="ad-placr-stepper">
+							<button type="button" data-ad-placr-para-step="-1" aria-label="<?php esc_attr_e( 'Decrease paragraph number', 'ad-placr' ); ?>">&minus;</button>
+							<input type="number" min="1" max="100" step="1" name="ad_placr_paragraph" id="ad-placr-paragraph" value="<?php echo esc_attr( (string) $paragraph ); ?>" />
+							<button type="button" data-ad-placr-para-step="1" aria-label="<?php esc_attr_e( 'Increase paragraph number', 'ad-placr' ); ?>">+</button>
+						</div>
+						<p class="description"><?php esc_html_e( 'Count paragraphs from the beginning of the main post content.', 'ad-placr' ); ?></p>
+					</div>
+
+					<div class="ad-placr-location-control" data-ad-placr-location-control="__align__" hidden>
+						<label><strong><?php esc_html_e( 'Alignment', 'ad-placr' ); ?></strong></label>
+						<div class="ad-placr-seg" role="radiogroup" aria-label="<?php esc_attr_e( 'Alignment', 'ad-placr' ); ?>">
+							<button type="button" data-al="none" class="<?php echo 'none' === $alignment ? 'is-active' : ''; ?>"><?php esc_html_e( 'None', 'ad-placr' ); ?></button>
+							<button type="button" data-al="left" class="<?php echo 'left' === $alignment ? 'is-active' : ''; ?>"><?php esc_html_e( 'Left', 'ad-placr' ); ?></button>
+							<button type="button" data-al="center" class="<?php echo 'center' === $alignment ? 'is-active' : ''; ?>"><?php esc_html_e( 'Center', 'ad-placr' ); ?></button>
+							<button type="button" data-al="right" class="<?php echo 'right' === $alignment ? 'is-active' : ''; ?>"><?php esc_html_e( 'Right', 'ad-placr' ); ?></button>
+						</div>
+						<p class="description"><?php esc_html_e( '"None" outputs your code untouched.', 'ad-placr' ); ?></p>
+					</div>
+
+					<div class="ad-placr-location-control" data-ad-placr-location-control="__devices__" hidden>
+						<label><strong><?php esc_html_e( 'Show on', 'ad-placr' ); ?></strong></label>
+						<div class="ad-placr-chips">
+							<?php
+							$device_choices = array(
+								'desktop' => __( 'Desktop', 'ad-placr' ),
+								'tablet'  => __( 'Tablet', 'ad-placr' ),
+								'mobile'  => __( 'Phone', 'ad-placr' ),
+							);
+							foreach ( $device_choices as $device_key => $device_label ) :
+								$device_on = in_array( $device_key, $devices, true );
+								?>
+								<label class="ad-placr-chip<?php echo $device_on ? ' is-active' : ''; ?>">
+									<input type="checkbox" name="ad_placr_devices[]" value="<?php echo esc_attr( $device_key ); ?>" <?php checked( $device_on ); ?> />
+									<?php echo esc_html( $device_label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<div
+						class="ad-placr-location-control"
+						data-ad-placr-location-control="manual_shortcode manual_block"
+						hidden
+					>
+						<label><strong><?php esc_html_e( 'Your shortcode', 'ad-placr' ); ?></strong></label>
+						<div class="ad-placr-copy-box">
+							<code>[ad_placr ad="<?php echo esc_html( (string) $post->ID ); ?>"]</code>
+						</div>
+						<p class="description"><?php esc_html_e( 'You can also choose this Ad from the Ad Placr block when it is available in the editor.', 'ad-placr' ); ?></p>
+					</div>
+
+					<div
+						class="ad-placr-location-control"
+						data-ad-placr-location-control="sidebar_widget"
+						hidden
+					>
+						<p><?php esc_html_e( 'Open Appearance > Widgets, add the Ad Placr widget, and choose this Ad.', 'ad-placr' ); ?></p>
+					</div>
+				</div>
 			</div>
 
-			<div
-				class="ad-placr-location-control"
-				data-ad-placr-location-control="sidebar_widget"
-				hidden
-			>
-				<p><?php esc_html_e( 'Open Appearance > Widgets, add the Ad Placr widget, and choose this Ad.', 'ad-placr' ); ?></p>
-			</div>
-
+			<input type="hidden" name="ad_placr_alignment" value="<?php echo esc_attr( $alignment ); ?>" data-ad-placr-alignment-input />
 			<input type="hidden" name="ad_placr_slot_id" value="<?php echo esc_attr( $slot_id ); ?>" />
 
 			<?php if ( self::has_duplicate_automatic_location( (int) $post->ID, $position ) ) : ?>
@@ -483,9 +650,6 @@ final class Ad_Placr_Admin {
 			);
 		$contexts     = isset( $targeting['contexts'] ) && is_array( $targeting['contexts'] ) ? $targeting['contexts'] : array();
 		$post_types   = isset( $targeting['post_types'] ) && is_array( $targeting['post_types'] ) ? $targeting['post_types'] : array();
-		$devices      = isset( $targeting['devices'] ) && is_array( $targeting['devices'] )
-			? $targeting['devices']
-			: array( 'desktop', 'tablet', 'mobile' );
 		$user         = isset( $targeting['user'] ) ? (string) $targeting['user'] : 'any';
 		$url_lines    = isset( $targeting['url_contains'] ) && is_array( $targeting['url_contains'] )
 			? implode( "\n", array_map( 'strval', $targeting['url_contains'] ) )
@@ -542,23 +706,6 @@ final class Ad_Placr_Admin {
 						<option value="guest" <?php selected( $user, 'guest' ); ?>><?php esc_html_e( 'Logged-out visitors', 'ad-placr' ); ?></option>
 					</select>
 				</div>
-
-				<fieldset class="ad-placr-field">
-					<legend><strong><?php esc_html_e( 'Screen sizes', 'ad-placr' ); ?></strong></legend>
-					<?php
-					$device_choices = array(
-						'desktop' => __( 'Desktop', 'ad-placr' ),
-						'tablet'  => __( 'Tablet', 'ad-placr' ),
-						'mobile'  => __( 'Mobile', 'ad-placr' ),
-					);
-					?>
-					<?php foreach ( $device_choices as $key => $label ) : ?>
-						<label class="ad-placr-check">
-							<input type="checkbox" name="ad_placr_devices[]" value="<?php echo esc_attr( $key ); ?>" <?php checked( in_array( $key, $devices, true ) ); ?> />
-							<?php echo esc_html( $label ); ?>
-						</label>
-					<?php endforeach; ?>
-				</fieldset>
 
 				<div class="ad-placr-field">
 					<label for="ad-placr-url-contains"><strong><?php esc_html_e( 'URL contains', 'ad-placr' ); ?></strong></label>
@@ -831,6 +978,12 @@ final class Ad_Placr_Admin {
 		$position = isset( $_POST['ad_placr_position'] )
 			? sanitize_key( wp_unslash( (string) $_POST['ad_placr_position'] ) )
 			: '';
+		if ( isset( $_POST['ad_placr_position_js_fallback_disabled'] ) ) {
+			$fallback = sanitize_key( wp_unslash( (string) $_POST['ad_placr_position_js_fallback_disabled'] ) );
+			if ( '' !== $fallback ) {
+				$position = $fallback;
+			}
+		}
 		if ( ! Ad_Placr_Positions::exists( $position ) ) {
 			$position = '';
 		}
@@ -861,6 +1014,9 @@ final class Ad_Placr_Admin {
 		$notes            = isset( $_POST['ad_placr_notes'] )
 			? sanitize_textarea_field( wp_unslash( (string) $_POST['ad_placr_notes'] ) )
 			: '';
+		$alignment        = isset( $_POST['ad_placr_alignment'] )
+			? Ad_Placr_Ad::normalize_alignment( sanitize_text_field( wp_unslash( (string) $_POST['ad_placr_alignment'] ) ) )
+			: 'none';
 		$legacy_status    = isset( $_POST['ad_placr_status'] )
 			? sanitize_key( wp_unslash( (string) $_POST['ad_placr_status'] ) )
 			: '';
@@ -873,6 +1029,7 @@ final class Ad_Placr_Admin {
 		);
 
 		update_post_meta( $post_id, Ad_Placr_Ad::META_POSITION, $position );
+		update_post_meta( $post_id, Ad_Placr_Ad::META_ALIGNMENT, $alignment );
 		update_post_meta( $post_id, Ad_Placr_Ad::META_VERSIONS, $versions );
 		update_post_meta( $post_id, Ad_Placr_Ad::META_TARGETING, $targeting );
 		update_post_meta( $post_id, Ad_Placr_Ad::META_NOTES, $notes );
@@ -1030,6 +1187,7 @@ final class Ad_Placr_Admin {
 		unset( $version );
 
 		update_post_meta( $new_id, Ad_Placr_Ad::META_POSITION, Ad_Placr_Ad::get_position( $source_id ) );
+		update_post_meta( $new_id, Ad_Placr_Ad::META_ALIGNMENT, Ad_Placr_Ad::get_alignment( $source_id ) );
 		update_post_meta( $new_id, Ad_Placr_Ad::META_TARGETING, Ad_Placr_Ad::get_targeting( $source_id ) );
 		update_post_meta( $new_id, Ad_Placr_Ad::META_NOTES, (string) get_post_meta( $source_id, Ad_Placr_Ad::META_NOTES, true ) );
 		update_post_meta( $new_id, Ad_Placr_Ad::META_VERSIONS, $versions );
@@ -1238,6 +1396,113 @@ final class Ad_Placr_Admin {
 		}
 
 		return $groups;
+	}
+
+	/**
+	 * Group positions by canonical group key for the area/spot picker.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return array<string, array{label:string, description:string, positions:array<string, string>}>
+	 */
+	private static function position_areas(): array {
+		$areas = array(
+			'in_content' => array(
+				'label'       => __( 'Inside post content', 'ad-placr' ),
+				'description' => __( 'Between the paragraphs', 'ad-placr' ),
+				'positions'   => array(),
+			),
+			'content'    => array(
+				'label'       => __( 'Around post content', 'ad-placr' ),
+				'description' => __( 'Above or below the article', 'ad-placr' ),
+				'positions'   => array(),
+			),
+			'structure'  => array(
+				'label'       => __( 'Site layout', 'ad-placr' ),
+				'description' => __( 'Header & footer strips', 'ad-placr' ),
+				'positions'   => array(),
+			),
+			'sticky'     => array(
+				'label'       => __( 'Sticky', 'ad-placr' ),
+				'description' => __( 'Bars & rails that follow scroll', 'ad-placr' ),
+				'positions'   => array(),
+			),
+			'listing'    => array(
+				'label'       => __( 'Listing pages', 'ad-placr' ),
+				'description' => __( 'Front page, blog & archives', 'ad-placr' ),
+				'positions'   => array(),
+			),
+			'manual'     => array(
+				'label'       => __( 'Place it yourself', 'ad-placr' ),
+				'description' => __( 'Shortcode or widget', 'ad-placr' ),
+				'positions'   => array(),
+			),
+		);
+
+		foreach ( Ad_Placr_Positions::all() as $key => $descriptor ) {
+			$key   = (string) $key;
+			$group = sanitize_key( (string) $descriptor['group'] );
+			$label = Ad_Placr_Positions::label( $key );
+			if ( '' === $label || ! isset( $areas[ $group ] ) ) {
+				continue;
+			}
+
+			$areas[ $group ]['positions'][ $key ] = $label;
+		}
+
+		return $areas;
+	}
+
+	/**
+	 * Short badge label for a position group.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $group Canonical group key.
+	 * @return string Badge text.
+	 */
+	private static function position_group_badge( string $group ): string {
+		$badges = array(
+			'in_content' => __( 'In-Content', 'ad-placr' ),
+			'content'    => __( 'Article', 'ad-placr' ),
+			'structure'  => __( 'Layout', 'ad-placr' ),
+			'sticky'     => __( 'Sticky', 'ad-placr' ),
+			'listing'    => __( 'Listing', 'ad-placr' ),
+			'manual'     => __( 'Manual', 'ad-placr' ),
+		);
+
+		return isset( $badges[ $group ] ) ? $badges[ $group ] : __( 'Other', 'ad-placr' );
+	}
+
+	/**
+	 * One-line scope description for a position key.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $key Canonical position key.
+	 * @return string Scope copy.
+	 */
+	private static function position_scope_label( string $key ): string {
+		if ( 'sticky_footer' === $key ) {
+			return __( 'Follows scroll', 'ad-placr' );
+		}
+		if ( in_array( $key, array( 'sticky_left_rail', 'sticky_right_rail' ), true ) ) {
+			return __( 'Desktop only', 'ad-placr' );
+		}
+
+		$all     = Ad_Placr_Positions::all();
+		$context = isset( $all[ $key ]['context'] ) ? (string) $all[ $key ]['context'] : '';
+
+		return match ( $context ) {
+			'singular'   => __( 'Posts only', 'ad-placr' ),
+			'global'     => __( 'Site-wide', 'ad-placr' ),
+			'front_page' => __( 'Front page only', 'ad-placr' ),
+			'blog_index' => __( 'Blog page only', 'ad-placr' ),
+			'archive'    => __( 'Archive pages only', 'ad-placr' ),
+			'widget'     => __( 'Widget areas', 'ad-placr' ),
+			'manual'     => __( 'Anywhere you paste it', 'ad-placr' ),
+			default      => '',
+		};
 	}
 
 	/**

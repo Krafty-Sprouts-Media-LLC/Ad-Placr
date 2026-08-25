@@ -46,35 +46,231 @@
 	}
 
 	/**
-	 * Reveal only controls associated with the selected display location,
-	 * and toggle the page-type contexts fieldset based on position context.
+	 * Reveal only controls associated with the selected display location.
 	 *
-	 * Positions with context "global" (or no selection) show the contexts
-	 * fieldset because those positions fire sitewide. All other contexts
-	 * (singular, front_page, blog_index, archive, manual, widget) hide it
-	 * because the position already implies or ignores the page type.
+	 * Alignment, devices, paragraph, and manual-embed panels are derived from
+	 * the localized position config so the script never hardcodes keys.
 	 */
-	function updateLocationControls() {
-		const select = document.querySelector( '[data-ad-placr-location]' );
+	function getPositionConfig( key ) {
+		const positions = window.adPlacrAdmin && window.adPlacrAdmin.positions ? window.adPlacrAdmin.positions : {};
+		return Object.prototype.hasOwnProperty.call( positions, key ) ? positions[ key ] : null;
+	}
 
-		if ( ! select ) {
+	function getPositionInput() {
+		return document.querySelector( '[data-ad-placr-position-input]' );
+	}
+
+	function syncMinimap( key ) {
+		document.querySelectorAll( '.ad-placr-wf-slot[data-pos]' ).forEach( function( slot ) {
+			const pos = slot.getAttribute( 'data-pos' );
+			const active = pos === key || ( 'in_content' === pos && /^in_content_/.test( key ) );
+			slot.classList.toggle( 'is-active', active );
+		} );
+	}
+
+	function setWfContext( ctx ) {
+		document.querySelectorAll( '.ad-placr-wf-slot[data-pos]' ).forEach( function( slot ) {
+			const pos = slot.getAttribute( 'data-pos' ) || '';
+			if ( /^(front_page|blog_index|archive)_(top|bottom)$/.test( pos ) ) {
+				slot.hidden = true;
+			}
+		} );
+
+		const listingPrefix = {
+			front_page: 'front_page_',
+			blog_index: 'blog_index_',
+			archive: 'archive_'
+		}[ ctx ];
+
+		if ( listingPrefix ) {
+			[ 'top', 'bottom' ].forEach( function( end ) {
+				const el = document.querySelector( '.ad-placr-wf-slot[data-pos="' + listingPrefix + end + '"]' );
+				if ( el ) {
+					el.hidden = false;
+				}
+			} );
+		}
+
+		[ 'before_post_content', 'after_post_content', 'in_content' ].forEach( function( pos ) {
+			const el = document.querySelector( '.ad-placr-wf-slot[data-pos="' + pos + '"]' );
+			if ( el ) {
+				el.hidden = 'single' !== ctx;
+			}
+		} );
+
+		const widget = document.querySelector( '.ad-placr-wf-slot[data-pos="sidebar_widget"]' );
+		if ( widget ) {
+			widget.hidden = 'single' !== ctx;
+		}
+	}
+
+	function updateLocationControls() {
+		const input = getPositionInput();
+
+		if ( ! input ) {
 			return;
 		}
 
-		/* Toggle position-specific sub-controls (paragraph number, shortcode hint, etc.). */
+		const key = input.value;
+		const config = getPositionConfig( key );
+		let visibleControls = 0;
+
 		document.querySelectorAll( '[data-ad-placr-location-control]' ).forEach( function( control ) {
-			const locations = control.getAttribute( 'data-ad-placr-location-control' ).split( /\s+/ );
-			control.hidden = ! locations.includes( select.value );
+			const token = control.getAttribute( 'data-ad-placr-location-control' ) || '';
+			let show = false;
+
+			if ( '__align__' === token ) {
+				show = ! ! ( config && config.align );
+			} else if ( '__devices__' === token ) {
+				show = ! ! ( config && 'sticky' === config.group );
+			} else {
+				show = token.split( /\s+/ ).includes( key );
+			}
+
+			control.hidden = ! show;
+			if ( show ) {
+				visibleControls += 1;
+			}
 		} );
 
-		/* Toggle the "Types of pages" fieldset based on the position's context. */
-		var contextsFieldset = document.querySelector( '[data-ad-placr-contexts-fieldset]' );
-		if ( contextsFieldset ) {
-			var selected = select.options[ select.selectedIndex ];
-			var context = selected ? selected.getAttribute( 'data-context' ) : '';
+		const psettings = document.querySelector( '[data-ad-placr-psettings]' );
+		if ( psettings ) {
+			psettings.hidden = 0 === visibleControls;
+		}
 
-			/* Only global positions benefit from page-type filtering. */
-			contextsFieldset.hidden = '' !== context && 'global' !== context;
+		const paraLabel = document.querySelector( '[data-ad-placr-para-label]' );
+		if ( paraLabel && config && config.para ) {
+			paraLabel.textContent = 'before' === config.para
+				? ( window.adPlacrAdmin && window.adPlacrAdmin.insertBefore ? window.adPlacrAdmin.insertBefore : 'Insert before paragraph' )
+				: ( window.adPlacrAdmin && window.adPlacrAdmin.insertAfter ? window.adPlacrAdmin.insertAfter : 'Insert after paragraph' );
+		}
+
+		const note = document.querySelector( '[data-ad-placr-scope-note]' );
+		if ( note ) {
+			const notes = window.adPlacrAdmin && window.adPlacrAdmin.scopeNotes ? window.adPlacrAdmin.scopeNotes : {};
+			let text = '';
+
+			if ( config ) {
+				if ( 'global' === config.context ) {
+					text = notes.global || '';
+				} else if ( 'singular' === config.context ) {
+					text = notes.singular || '';
+				} else if ( 'manual' === config.context || 'widget' === config.context ) {
+					text = notes.manual || '';
+				} else {
+					text = notes.listing || '';
+				}
+			}
+
+			note.textContent = text;
+			note.hidden = '' === text;
+		}
+
+		document.querySelectorAll( '[data-ad-placr-rule]' ).forEach( function( field ) {
+			const rule = field.getAttribute( 'data-ad-placr-rule' );
+			const always = 'visitors' === rule || 'schedule' === rule;
+			const listed = config && Array.isArray( config.rules ) && config.rules.indexOf( rule ) !== -1;
+			field.hidden = ! ( always || listed );
+		} );
+
+		syncMinimap( key );
+	}
+
+	function showArea( group ) {
+		document.querySelectorAll( '[data-ad-placr-areas] [data-area]' ).forEach( function( btn ) {
+			btn.classList.toggle( 'is-active', btn.getAttribute( 'data-area' ) === group );
+		} );
+
+		const spots = document.querySelector( '[data-ad-placr-spots]' );
+		if ( ! spots ) {
+			return;
+		}
+
+		spots.hidden = '' === group;
+		spots.querySelectorAll( '[data-pos]' ).forEach( function( btn ) {
+			btn.hidden = btn.getAttribute( 'data-group' ) !== group;
+		} );
+	}
+
+	function setPosition( key ) {
+		const input = getPositionInput();
+		if ( ! input ) {
+			return;
+		}
+
+		input.value = key;
+		const config = getPositionConfig( key );
+		showArea( config && config.group ? config.group : '' );
+
+		document.querySelectorAll( '[data-ad-placr-spots] [data-pos]' ).forEach( function( btn ) {
+			btn.classList.toggle( 'is-active', btn.getAttribute( 'data-pos' ) === key );
+		} );
+
+		updateLocationControls();
+	}
+
+	function initializePlacementPicker( root ) {
+		root.addEventListener( 'click', function( event ) {
+			const areaBtn = event.target.closest( '[data-ad-placr-areas] [data-area]' );
+			if ( areaBtn ) {
+				showArea( areaBtn.getAttribute( 'data-area' ) );
+				return;
+			}
+
+			const spotBtn = event.target.closest( '[data-ad-placr-spots] [data-pos], .ad-placr-wf-slot[data-pos]' );
+			if ( spotBtn ) {
+				let key = spotBtn.getAttribute( 'data-pos' );
+				if ( 'in_content' === key ) {
+					const current = getPositionInput() ? getPositionInput().value : '';
+					key = /^in_content_/.test( current ) ? current : 'in_content_after_paragraph';
+				}
+				setPosition( key );
+				return;
+			}
+
+			const alignBtn = event.target.closest( '.ad-placr-seg [data-al]' );
+			if ( alignBtn ) {
+				const hidden = root.querySelector( '[data-ad-placr-alignment-input]' );
+				if ( hidden ) {
+					hidden.value = alignBtn.getAttribute( 'data-al' );
+				}
+				root.querySelectorAll( '.ad-placr-seg [data-al]' ).forEach( function( btn ) {
+					btn.classList.toggle( 'is-active', btn === alignBtn );
+				} );
+				return;
+			}
+
+			const step = event.target.closest( '[data-ad-placr-para-step]' );
+			if ( step ) {
+				const para = document.getElementById( 'ad-placr-paragraph' );
+				if ( para ) {
+					const next = Math.max( 1, Math.min( 100, ( parseInt( para.value, 10 ) || 1 ) + parseInt( step.getAttribute( 'data-ad-placr-para-step' ), 10 ) ) );
+					para.value = String( next );
+				}
+			}
+		} );
+
+		root.addEventListener( 'change', function( event ) {
+			const chip = event.target.closest( '.ad-placr-chip' );
+			if ( chip && event.target.matches( 'input[type="checkbox"]' ) ) {
+				chip.classList.toggle( 'is-active', event.target.checked );
+			}
+
+			if ( event.target.matches( '[data-ad-placr-wf-context]' ) ) {
+				setWfContext( event.target.value );
+			}
+		} );
+
+		const input = getPositionInput();
+		if ( input && '' !== input.value ) {
+			setPosition( input.value );
+		} else {
+			updateLocationControls();
+		}
+
+		const wfContext = root.querySelector( '[data-ad-placr-wf-context]' );
+		if ( wfContext ) {
+			setWfContext( wfContext.value );
 		}
 	}
 
@@ -219,10 +415,15 @@
 	}
 
 	document.addEventListener( 'DOMContentLoaded', function() {
-		const location = document.querySelector( '[data-ad-placr-location]' );
-		if ( location ) {
-			location.addEventListener( 'change', updateLocationControls );
-			updateLocationControls();
+		const placement = document.querySelector( '.ad-placr-placement' );
+		if ( placement ) {
+			initializePlacementPicker( placement );
+		} else {
+			const location = document.querySelector( '[data-ad-placr-location]' );
+			if ( location ) {
+				location.addEventListener( 'change', updateLocationControls );
+				updateLocationControls();
+			}
 		}
 
 		document.querySelectorAll( '[data-ad-placr-versions]' ).forEach( initializeVersions );
