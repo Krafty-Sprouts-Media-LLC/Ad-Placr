@@ -181,22 +181,12 @@ final class Ad_Placr_Admin {
 
 		$raw_position = (string) get_post_meta( $post->ID, Ad_Placr_Ad::META_POSITION, true );
 		$position     = Ad_Placr_Positions::exists( $raw_position ) ? $raw_position : '';
-		$status       = 'publish' === get_post_status( $post ) ? 'publish' : 'draft';
 		$targeting    = wp_parse_args( Ad_Placr_Ad::get_targeting( (int) $post->ID ), self::default_targeting() );
 		$paragraph    = max( 1, min( 100, absint( $targeting['paragraph'] ) ) );
 		$slot_id      = isset( $targeting['slot_id'] ) ? sanitize_key( (string) $targeting['slot_id'] ) : '';
 		$groups       = self::grouped_positions();
 		?>
 		<div class="ad-placr-editor-section">
-			<div class="ad-placr-field">
-				<label for="ad-placr-status"><strong><?php esc_html_e( 'Status', 'ad-placr' ); ?></strong></label>
-				<select name="ad_placr_status" id="ad-placr-status">
-					<option value="publish" <?php selected( $status, 'publish' ); ?>><?php esc_html_e( 'Active', 'ad-placr' ); ?></option>
-					<option value="draft" <?php selected( $status, 'draft' ); ?>><?php esc_html_e( 'Paused', 'ad-placr' ); ?></option>
-				</select>
-				<p class="description"><?php esc_html_e( 'Paused Ads can be saved before their setup is complete.', 'ad-placr' ); ?></p>
-			</div>
-
 			<div class="ad-placr-field">
 				<label for="ad-placr-position"><strong><?php esc_html_e( 'Display location', 'ad-placr' ); ?></strong></label>
 				<select name="ad_placr_position" id="ad-placr-position" class="widefat" data-ad-placr-location>
@@ -736,6 +726,24 @@ final class Ad_Placr_Admin {
 	}
 
 	/**
+	 * Resolve the requested Active/Paused state for a save.
+	 *
+	 * Prefers the native post_status field so the standard publish box drives
+	 * status; falls back to the legacy custom field during transitions.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string|null $post_status Native WordPress post status, when present.
+	 * @param string|null $legacy      Legacy ad_placr_status value, when present.
+	 * @return string Either publish or draft.
+	 */
+	public static function normalize_requested_status( ?string $post_status, ?string $legacy ): string {
+		$candidate = ( null !== $post_status && '' !== $post_status ) ? $post_status : (string) $legacy;
+
+		return 'publish' === sanitize_key( $candidate ) ? 'publish' : 'draft';
+	}
+
+	/**
 	 * Save all unified Ad fields through one guarded callback.
 	 *
 	 * @since 2.7.0
@@ -803,10 +811,16 @@ final class Ad_Placr_Admin {
 		$notes            = isset( $_POST['ad_placr_notes'] )
 			? sanitize_textarea_field( wp_unslash( (string) $_POST['ad_placr_notes'] ) )
 			: '';
-		$requested_status = isset( $_POST['ad_placr_status'] )
+		$legacy_status    = isset( $_POST['ad_placr_status'] )
 			? sanitize_key( wp_unslash( (string) $_POST['ad_placr_status'] ) )
-			: 'draft';
-		$requested_status = 'publish' === $requested_status ? 'publish' : 'draft';
+			: '';
+		$native_status    = isset( $_POST['post_status'] )
+			? sanitize_key( wp_unslash( (string) $_POST['post_status'] ) )
+			: '';
+		$requested_status = self::normalize_requested_status(
+			'' !== $native_status ? $native_status : null,
+			'' !== $legacy_status ? $legacy_status : null
+		);
 
 		update_post_meta( $post_id, Ad_Placr_Ad::META_POSITION, $position );
 		update_post_meta( $post_id, Ad_Placr_Ad::META_VERSIONS, $versions );
