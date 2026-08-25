@@ -345,14 +345,128 @@
 		const list = root.querySelector( '[data-ad-placr-version-list]' );
 		const template = root.querySelector( '[data-ad-placr-version-template]' );
 		const addButton = root.querySelector( '[data-ad-placr-add-version]' );
+		const tabs = root.querySelector( '[data-ad-placr-version-tabs]' );
+		const weightGroup = root.querySelector( '[data-ad-placr-weight-group]' );
+		const slider = root.querySelector( '[data-ad-placr-weight-slider]' );
+		const sliderVal = root.querySelector( '[data-ad-placr-weight-val]' );
 		let nextIndex = root.querySelectorAll( '[data-ad-placr-version-row]' ).length;
+		let activeIndex = 0;
 
 		if ( ! list || ! template || ! addButton ) {
 			return;
 		}
 
+		function rows() {
+			return Array.from( root.querySelectorAll( '[data-ad-placr-version-list] > [data-ad-placr-version-row]' ) );
+		}
+
+		function rowWeight( row ) {
+			const weight = row.querySelector( '[data-ad-placr-version-weight]' );
+			return Math.max( 1, Number.parseInt( weight ? weight.value : '1', 10 ) || 1 );
+		}
+
+		function showPanel( index ) {
+			const all = rows();
+			activeIndex = Math.max( 0, Math.min( index, all.length - 1 ) );
+			all.forEach( function( row, i ) {
+				row.hidden = i !== activeIndex;
+			} );
+			if ( tabs ) {
+				tabs.querySelectorAll( '[data-ad-placr-version-tab]' ).forEach( function( tab, i ) {
+					tab.classList.toggle( 'is-active', i === activeIndex );
+				} );
+			}
+			syncSlider();
+			root.dispatchEvent( new CustomEvent( 'ad-placr-version-change', { bubbles: true } ) );
+		}
+
+		function renderTabs() {
+			const all = rows();
+			const multiple = all.length > 1;
+			root.dataset.multiple = multiple ? '1' : '0';
+			if ( tabs ) {
+				tabs.hidden = ! multiple;
+				tabs.innerHTML = '';
+				all.forEach( function( row, i ) {
+					const nameInput = row.querySelector( '[data-ad-placr-version-name]' );
+					const name = nameInput && nameInput.value.trim() ? nameInput.value.trim() : ( ( window.adPlacrAdmin && window.adPlacrAdmin.versionLabel ? window.adPlacrAdmin.versionLabel : 'Version' ) + ' ' + alphabeticLabel( i ) );
+					const tab = document.createElement( 'button' );
+					tab.type = 'button';
+					tab.className = 'ad-placr-version-tab' + ( i === activeIndex ? ' is-active' : '' );
+					tab.setAttribute( 'data-ad-placr-version-tab', String( i ) );
+					tab.innerHTML = name + ' <span class="ad-placr-version-tab-pct">' + rowWeight( row ) + '%</span>';
+					tab.addEventListener( 'click', function() {
+						showPanel( i );
+					} );
+					tabs.appendChild( tab );
+				} );
+			}
+			if ( weightGroup ) {
+				weightGroup.hidden = ! multiple;
+			}
+		}
+
+		function syncSlider() {
+			if ( ! slider || ! sliderVal ) {
+				return;
+			}
+			const all = rows();
+			const current = all[ activeIndex ];
+			if ( ! current ) {
+				return;
+			}
+			const value = Math.min( 99, Math.max( 1, rowWeight( current ) ) );
+			slider.value = String( value );
+			sliderVal.textContent = value + '%';
+		}
+
+		function rebalanceFromSlider( raw ) {
+			const all = rows();
+			const current = all[ activeIndex ];
+			if ( ! current ) {
+				return;
+			}
+			const value = Math.min( 99, Math.max( 1, Number.parseInt( raw, 10 ) || 1 ) );
+			const currentInput = current.querySelector( '[data-ad-placr-version-weight]' );
+			if ( currentInput ) {
+				currentInput.value = String( value );
+			}
+			const others = all.length - 1;
+			const rest = 100 - value;
+			let restWeights = 0;
+			all.forEach( function( row, i ) {
+				if ( i !== activeIndex ) {
+					restWeights += rowWeight( row );
+				}
+			} );
+			all.forEach( function( row, i ) {
+				if ( i === activeIndex ) {
+					return;
+				}
+				const input = row.querySelector( '[data-ad-placr-version-weight]' );
+				if ( ! input ) {
+					return;
+				}
+				input.value = String( others ? Math.max( 1, Math.round( rest * rowWeight( row ) / restWeights ) ) : rest );
+			} );
+			if ( sliderVal ) {
+				sliderVal.textContent = value + '%';
+			}
+			updateShares( root );
+			renderTabs();
+			showPanel( activeIndex );
+		}
+
 		fillEmptyNames( root );
 		updateShares( root );
+		renderTabs();
+		showPanel( 0 );
+
+		if ( slider ) {
+			slider.addEventListener( 'input', function() {
+				rebalanceFromSlider( slider.value );
+			} );
+		}
 
 		addButton.addEventListener( 'click', function() {
 			const wrapper = document.createElement( 'div' );
@@ -370,9 +484,10 @@
 			}
 
 			list.appendChild( row );
-			root.dataset.multiple = '1';
 			fillEmptyNames( root );
 			updateShares( root );
+			renderTabs();
+			showPanel( rows().length - 1 );
 
 			const firstInput = row.querySelector( 'input:not([type="hidden"]), textarea' );
 			if ( firstInput ) {
@@ -389,8 +504,8 @@
 				return;
 			}
 
-			const rows = root.querySelectorAll( '[data-ad-placr-version-row]' );
-			if ( rows.length <= 1 ) {
+			const all = rows();
+			if ( all.length <= 1 ) {
 				return;
 			}
 
@@ -399,9 +514,10 @@
 				row.remove();
 			}
 
-			root.dataset.multiple = root.querySelectorAll( '[data-ad-placr-version-row]' ).length > 1 ? '1' : '0';
 			fillEmptyNames( root );
 			updateShares( root );
+			renderTabs();
+			showPanel( Math.min( activeIndex, rows().length - 1 ) );
 			addButton.focus();
 			speak( window.adPlacrAdmin ? window.adPlacrAdmin.versionRemoved : 'Ad version removed.' );
 		} );
@@ -413,12 +529,25 @@
 				if ( heading ) {
 					heading.textContent = event.target.value;
 				}
+				renderTabs();
 			}
 
 			updateShares( root );
 		} );
 
-		root.addEventListener( 'change', function() {
+		root.addEventListener( 'change', function( event ) {
+			if ( event.target.matches( '[data-ad-placr-mobile-toggle]' ) ) {
+				const row = event.target.closest( '[data-ad-placr-version-row]' );
+				const wrap = row ? row.querySelector( '[data-ad-placr-mobile-wrap]' ) : null;
+				const mobile = row ? row.querySelector( '[data-ad-placr-version-mobile]' ) : null;
+				if ( wrap ) {
+					wrap.hidden = ! event.target.checked;
+				}
+				if ( ! event.target.checked && mobile ) {
+					mobile.value = '';
+				}
+			}
+
 			updateShares( root );
 		} );
 	}

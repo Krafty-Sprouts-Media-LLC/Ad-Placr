@@ -518,9 +518,15 @@ final class Ad_Placr_Admin {
 			<p class="description ad-placr-common-code-help">
 				<?php esc_html_e( 'Paste the code provided by your ad network. Add mobile code only when the network gives you a separate mobile version.', 'ad-placr' ); ?>
 			</p>
+			<div class="ad-placr-version-tabs" data-ad-placr-version-tabs hidden></div>
+			<div class="ad-placr-weight-slider-group" data-ad-placr-weight-group hidden>
+				<span class="ad-placr-weight-slider-label"><?php esc_html_e( 'Traffic split', 'ad-placr' ); ?></span>
+				<input type="range" min="1" max="99" class="ad-placr-weight-slider" data-ad-placr-weight-slider />
+				<strong class="ad-placr-weight-percentage" data-ad-placr-weight-val>50%</strong>
+			</div>
 			<div class="ad-placr-version-list" data-ad-placr-version-list>
 				<?php foreach ( $versions as $index => $version ) : ?>
-					<?php self::render_version_row( (string) $index, $version ); ?>
+					<?php self::render_version_row( (string) $index, $version, 0 === (int) $index ); ?>
 				<?php endforeach; ?>
 			</div>
 			<p>
@@ -539,7 +545,8 @@ final class Ad_Placr_Admin {
 						'mobile_code' => '',
 						'weight'      => 1,
 						'enabled'     => true,
-					)
+					),
+					false
 				);
 				?>
 			</template>
@@ -554,9 +561,10 @@ final class Ad_Placr_Admin {
 	 *
 	 * @param string               $index   Form row index or template placeholder.
 	 * @param array<string, mixed> $version Normalized version values.
+	 * @param bool                 $active  Whether this panel is the visible tab.
 	 * @return void
 	 */
-	private static function render_version_row( string $index, array $version ): void {
+	private static function render_version_row( string $index, array $version, bool $active = true ): void {
 		$base       = 'ad_placr_versions[' . $index . ']';
 		$version_id = isset( $version['version_id'] ) ? (string) $version['version_id'] : '';
 		$name       = isset( $version['name'] ) ? (string) $version['name'] : '';
@@ -565,8 +573,9 @@ final class Ad_Placr_Admin {
 		$weight     = max( 1, isset( $version['weight'] ) ? (int) $version['weight'] : 1 );
 		$enabled    = ! isset( $version['enabled'] ) || ! empty( $version['enabled'] );
 		$id_suffix  = sanitize_html_class( $index );
+		$has_mobile = '' !== trim( $mobile );
 		?>
-		<section class="ad-placr-version" data-ad-placr-version-row>
+		<section class="ad-placr-version" data-ad-placr-version-row data-ad-placr-version-panel <?php echo $active ? '' : 'hidden'; ?>>
 			<input type="hidden" name="<?php echo esc_attr( $base ); ?>[version_id]" value="<?php echo esc_attr( $version_id ); ?>" data-ad-placr-version-id />
 			<div class="ad-placr-version-heading ad-placr-version-advanced">
 				<strong data-ad-placr-version-heading><?php echo esc_html( '' !== $name ? $name : __( 'Ad version', 'ad-placr' ) ); ?></strong>
@@ -610,15 +619,21 @@ final class Ad_Placr_Admin {
 					><?php echo esc_textarea( $code ); ?></textarea>
 				</div>
 				<div class="ad-placr-field ad-placr-version-code">
-					<label for="ad-placr-version-mobile-<?php echo esc_attr( $id_suffix ); ?>"><strong><?php esc_html_e( 'Mobile ad code (optional)', 'ad-placr' ); ?></strong></label>
-					<textarea
-						class="large-text code"
-						rows="8"
-						id="ad-placr-version-mobile-<?php echo esc_attr( $id_suffix ); ?>"
-						name="<?php echo esc_attr( $base ); ?>[mobile_code]"
-						data-ad-placr-version-mobile
-					><?php echo esc_textarea( $mobile ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'Leave empty to use the main ad code on phones.', 'ad-placr' ); ?></p>
+					<label class="ad-placr-mobile-toggle">
+						<input type="checkbox" data-ad-placr-mobile-toggle <?php checked( $has_mobile ); ?> />
+						<?php esc_html_e( 'Separate mobile code', 'ad-placr' ); ?>
+					</label>
+					<div class="ad-placr-mobile-code" data-ad-placr-mobile-wrap <?php echo $has_mobile ? '' : 'hidden'; ?>>
+						<label for="ad-placr-version-mobile-<?php echo esc_attr( $id_suffix ); ?>" class="screen-reader-text"><?php esc_html_e( 'Mobile ad code (optional)', 'ad-placr' ); ?></label>
+						<textarea
+							class="large-text code"
+							rows="8"
+							id="ad-placr-version-mobile-<?php echo esc_attr( $id_suffix ); ?>"
+							name="<?php echo esc_attr( $base ); ?>[mobile_code]"
+							data-ad-placr-version-mobile
+						><?php echo esc_textarea( $mobile ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Leave empty to use the main ad code on phones.', 'ad-placr' ); ?></p>
+					</div>
 				</div>
 			</div>
 			<p class="ad-placr-version-advanced">
