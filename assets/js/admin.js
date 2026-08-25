@@ -660,6 +660,86 @@
 		rebuild();
 	}
 
+	function initializeSubmitbox() {
+		if ( ! document.body || ! document.body.classList.contains( 'post-type-ad_placr_ad' ) ) {
+			return;
+		}
+
+		const publish = document.getElementById( 'publish' );
+		const save = document.getElementById( 'save-post' );
+		const i18n = window.adPlacrAdmin || {};
+
+		if ( publish ) {
+			publish.value = i18n.saveActivate || 'Save & Activate';
+		}
+		if ( save ) {
+			save.value = i18n.savePause || 'Save & Pause';
+		}
+
+		const box = document.getElementById( 'submitdiv' );
+		if ( ! box || box.querySelector( '[data-ad-placr-checklist]' ) ) {
+			return;
+		}
+
+		const help = document.createElement( 'p' );
+		help.className = 'ad-placr-submit-help';
+		const tipBtn = document.createElement( 'button' );
+		tipBtn.type = 'button';
+		tipBtn.className = 'tip';
+		tipBtn.setAttribute( 'aria-label', 'Help' );
+		const tipBox = document.createElement( 'span' );
+		tipBox.className = 'tip-box';
+		tipBox.textContent = i18n.publishHelp || '';
+		tipBtn.appendChild( tipBox );
+		tipBtn.appendChild( document.createTextNode( '?' ) );
+		help.appendChild( tipBtn );
+
+		const list = document.createElement( 'ul' );
+		list.className = 'ad-placr-checklist';
+		list.setAttribute( 'data-ad-placr-checklist', '1' );
+		list.innerHTML = '<li data-ad-placr-check="code" class="bad"></li><li data-ad-placr-check="pos" class="bad"></li>';
+		const codeItem = list.querySelector( '[data-ad-placr-check="code"]' );
+		const posItem = list.querySelector( '[data-ad-placr-check="pos"]' );
+		if ( codeItem ) {
+			codeItem.textContent = i18n.checklistCode || 'Ad code added';
+		}
+		if ( posItem ) {
+			posItem.textContent = i18n.checklistPos || 'Location chosen';
+		}
+
+		const inside = box.querySelector( '.inside' );
+		if ( inside ) {
+			inside.appendChild( help );
+			inside.appendChild( list );
+		}
+
+		function hasCode() {
+			return Array.from( document.querySelectorAll( '[data-ad-placr-version-code]' ) ).some( function( area ) {
+				return area.value.trim().length > 10;
+			} );
+		}
+
+		function updateChecklist() {
+			const input = getPositionInput();
+			function setItem( el, ok ) {
+				if ( ! el ) {
+					return;
+				}
+				el.className = ok ? 'ok' : 'bad';
+				el.textContent = ( ok ? '\u2713 ' : '\u2717 ' ) + el.textContent.replace( /^[\u2713\u2717]\s*/, '' );
+			}
+			setItem( list.querySelector( '[data-ad-placr-check="code"]' ), hasCode() );
+			setItem( list.querySelector( '[data-ad-placr-check="pos"]' ), ! ! ( input && input.value ) );
+		}
+
+		document.addEventListener( 'input', updateChecklist );
+		document.addEventListener( 'change', updateChecklist );
+		document.addEventListener( 'click', function() {
+			window.setTimeout( updateChecklist, 0 );
+		} );
+		updateChecklist();
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function() {
 		const placement = document.querySelector( '.ad-placr-placement' );
 		if ( placement ) {
@@ -678,5 +758,7 @@
 		if ( preview ) {
 			initializePreview( preview );
 		}
+
+		initializeSubmitbox();
 	} );
 }() );

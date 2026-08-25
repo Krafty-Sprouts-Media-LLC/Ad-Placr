@@ -188,6 +188,11 @@ final class Ad_Placr_Admin {
 					'manual'     => __( 'Rendered wherever you embed it.', 'ad-placr' ),
 					'widget'     => __( 'Rendered wherever you embed it.', 'ad-placr' ),
 				),
+				'saveActivate'   => __( 'Save & Activate', 'ad-placr' ),
+				'savePause'      => __( 'Save & Pause', 'ad-placr' ),
+				'checklistCode'  => __( 'Ad code added', 'ad-placr' ),
+				'checklistPos'   => __( 'Location chosen', 'ad-placr' ),
+				'publishHelp'    => __( 'Paused ads are saved but never shown to visitors — safe for half-finished setups. Activation is blocked until the checklist below turns green.', 'ad-placr' ),
 			)
 		);
 	}
@@ -368,7 +373,9 @@ final class Ad_Placr_Admin {
 
 				<div class="ad-placr-minimap ad-placr-wf-box">
 					<div class="ad-placr-wf-context-row">
-						<label for="ad-placr-wf-context"><strong><?php esc_html_e( 'Preview page:', 'ad-placr' ); ?></strong></label>
+						<label for="ad-placr-wf-context"><strong><?php esc_html_e( 'Preview page:', 'ad-placr' ); ?></strong>
+							<?php self::tip( __( 'Switch this to see which spots exist on each kind of page. The mini-page is clickable — clicking any dashed slot picks it as this ad’s location.', 'ad-placr' ) ); ?>
+						</label>
 						<select id="ad-placr-wf-context" data-ad-placr-wf-context>
 							<option value="single"><?php esc_html_e( 'Single post', 'ad-placr' ); ?></option>
 							<option value="front_page"><?php esc_html_e( 'Front page', 'ad-placr' ); ?></option>
@@ -418,7 +425,9 @@ final class Ad_Placr_Admin {
 						data-ad-placr-location-control="in_content_before_paragraph in_content_after_paragraph"
 						hidden
 					>
-						<label for="ad-placr-paragraph"><strong data-ad-placr-para-label><?php esc_html_e( 'Insert after paragraph', 'ad-placr' ); ?></strong></label>
+						<label for="ad-placr-paragraph"><strong data-ad-placr-para-label><?php esc_html_e( 'Insert after paragraph', 'ad-placr' ); ?></strong>
+							<?php self::tip( __( 'Paragraphs are counted from the top of the article body, starting at 1. The preview below shows exactly where the ad lands.', 'ad-placr' ) ); ?>
+						</label>
 						<div class="ad-placr-stepper">
 							<button type="button" data-ad-placr-para-step="-1" aria-label="<?php esc_attr_e( 'Decrease paragraph number', 'ad-placr' ); ?>">&minus;</button>
 							<input type="number" min="1" max="100" step="1" name="ad_placr_paragraph" id="ad-placr-paragraph" value="<?php echo esc_attr( (string) $paragraph ); ?>" />
@@ -439,7 +448,9 @@ final class Ad_Placr_Admin {
 					</div>
 
 					<div class="ad-placr-location-control" data-ad-placr-location-control="__devices__" hidden>
-						<label><strong><?php esc_html_e( 'Show on', 'ad-placr' ); ?></strong></label>
+						<label><strong><?php esc_html_e( 'Show on', 'ad-placr' ); ?></strong>
+							<?php self::tip( __( 'Untick a device to hide this ad there. Sticky rails only exist on desktop screens, so the phone option has no effect for them.', 'ad-placr' ) ); ?>
+						</label>
 						<div class="ad-placr-chips">
 							<?php
 							$device_choices = array(
@@ -463,9 +474,17 @@ final class Ad_Placr_Admin {
 						data-ad-placr-location-control="manual_shortcode manual_block"
 						hidden
 					>
-						<label><strong><?php esc_html_e( 'Your shortcode', 'ad-placr' ); ?></strong></label>
+						<label><strong><?php esc_html_e( 'Your shortcode', 'ad-placr' ); ?></strong>
+							<?php self::tip( __( 'Paste this into any post, page, or block to show this ad exactly there — independent of the automatic location chosen in Step 2.', 'ad-placr' ) ); ?>
+						</label>
 						<div class="ad-placr-copy-box">
 							<code>[ad_placr ad="<?php echo esc_html( (string) $post->ID ); ?>"]</code>
+						</div>
+						<label><strong><?php esc_html_e( 'PHP (templates)', 'ad-placr' ); ?></strong>
+							<?php self::tip( __( 'For theme template files. If you are not comfortable editing theme code, stick to the shortcode.', 'ad-placr' ) ); ?>
+						</label>
+						<div class="ad-placr-copy-box">
+							<code><?php echo esc_html( 'echo do_shortcode( \'[ad_placr ad="' . (int) $post->ID . '"]\' );' ); ?></code>
 						</div>
 						<p class="description"><?php esc_html_e( 'You can also choose this Ad from the Ad Placr block when it is available in the editor.', 'ad-placr' ); ?></p>
 					</div>
@@ -527,10 +546,14 @@ final class Ad_Placr_Admin {
 		<div class="ad-placr-versions" data-ad-placr-versions data-multiple="<?php echo esc_attr( $multiple ? '1' : '0' ); ?>">
 			<p class="description ad-placr-common-code-help">
 				<?php esc_html_e( 'Paste the code provided by your ad network. Add mobile code only when the network gives you a separate mobile version.', 'ad-placr' ); ?>
+				<?php self::tip( __( 'Paste any code your ad network gives you — Google AdSense, GPT tags, affiliate HTML, SVG. It is stored exactly as pasted and printed on your site untouched.', 'ad-placr' ) ); ?>
 			</p>
 			<div class="ad-placr-version-tabs" data-ad-placr-version-tabs hidden></div>
 			<div class="ad-placr-weight-slider-group" data-ad-placr-weight-group hidden>
-				<span class="ad-placr-weight-slider-label"><?php esc_html_e( 'Traffic split', 'ad-placr' ); ?></span>
+				<span class="ad-placr-weight-slider-label">
+					<?php esc_html_e( 'Traffic split', 'ad-placr' ); ?>
+					<?php self::tip( __( 'Higher % = shown more often. 60/40 means Version A appears in roughly 6 out of 10 pageviews. Only used when you have two or more versions.', 'ad-placr' ) ); ?>
+				</span>
 				<input type="range" min="1" max="99" class="ad-placr-weight-slider" data-ad-placr-weight-slider />
 				<strong class="ad-placr-weight-percentage" data-ad-placr-weight-val>50%</strong>
 			</div>
@@ -632,6 +655,7 @@ final class Ad_Placr_Admin {
 					<label class="ad-placr-mobile-toggle">
 						<input type="checkbox" data-ad-placr-mobile-toggle <?php checked( $has_mobile ); ?> />
 						<?php esc_html_e( 'Separate mobile code', 'ad-placr' ); ?>
+						<?php self::tip( __( 'Use this when your network provides a phone-specific snippet. Phones then get this code instead of the main one — handy for smaller 320×50 units.', 'ad-placr' ) ); ?>
 					</label>
 					<div class="ad-placr-mobile-code" data-ad-placr-mobile-wrap <?php echo $has_mobile ? '' : 'hidden'; ?>>
 						<label for="ad-placr-version-mobile-<?php echo esc_attr( $id_suffix ); ?>" class="screen-reader-text"><?php esc_html_e( 'Mobile ad code (optional)', 'ad-placr' ); ?></label>
@@ -706,7 +730,10 @@ final class Ad_Placr_Admin {
 			'search'     => __( 'Search results', 'ad-placr' ),
 		);
 		?>
-		<p class="description" data-ad-placr-rules-hint><?php esc_html_e( 'By default, this Ad can appear everywhere its display location is available.', 'ad-placr' ); ?></p>
+		<p class="description">
+			<span data-ad-placr-rules-hint><?php esc_html_e( 'By default, this Ad can appear everywhere its display location is available.', 'ad-placr' ); ?></span>
+			<?php self::tip( __( 'Optional limits. Until you change something here, the ad shows everywhere its location allows. Each rule you set narrows that down — they are combined with AND.', 'ad-placr' ) ); ?>
+		</p>
 		<details class="ad-placr-rules" <?php echo $has_rules ? 'open' : ''; ?>>
 			<summary><?php esc_html_e( 'Only show on specific pages, devices, or schedules', 'ad-placr' ); ?></summary>
 			<div class="ad-placr-rules-grid">
@@ -797,6 +824,9 @@ final class Ad_Placr_Admin {
 		$clicks      = Ad_Placr_Analytics::count_events( 'click', (int) $post->ID );
 		$versions    = Ad_Placr_Ad::get_versions( (int) $post->ID );
 		?>
+		<p class="description">
+			<?php self::tip( __( 'Totals appear once you enable statistics storage in Ads → Settings. No personal data — only event type, ad, version, and time are stored.', 'ad-placr' ) ); ?>
+		</p>
 		<div class="ad-placr-stat-summary">
 			<div>
 				<span><?php esc_html_e( 'Impressions', 'ad-placr' ); ?></span>
@@ -1569,6 +1599,22 @@ final class Ad_Placr_Admin {
 			'manual'     => __( 'Anywhere you paste it', 'ad-placr' ),
 			default      => '',
 		};
+	}
+
+	/**
+	 * Render one help tooltip button.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $text Help copy shown on hover/focus.
+	 * @return void
+	 */
+	private static function tip( string $text ): void {
+		printf(
+			'<button type="button" class="tip" aria-label="%1$s"><span class="tip-box">%2$s</span>?</button>',
+			esc_attr__( 'Help', 'ad-placr' ),
+			esc_html( $text )
+		);
 	}
 
 	/**
