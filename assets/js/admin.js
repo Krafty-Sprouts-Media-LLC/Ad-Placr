@@ -760,5 +760,19 @@
 		}
 
 		initializeSubmitbox();
+
+		document.querySelectorAll( '[data-ad-placr-copy]' ).forEach( function( button ) {
+			button.addEventListener( 'click', function() {
+				const text = button.getAttribute( 'data-ad-placr-copy' ) || '';
+				if ( navigator.clipboard && navigator.clipboard.writeText ) {
+					navigator.clipboard.writeText( text );
+				}
+				const original = button.textContent;
+				button.textContent = '\u2713';
+				window.setTimeout( function() {
+					button.textContent = original;
+				}, 1200 );
+			} );
+		} );
 	} );
 }() );

@@ -112,10 +112,19 @@ final class Ad_Placr_Admin {
 
 		add_meta_box(
 			'ad-placr-stats',
-			__( 'Statistics', 'ad-placr' ),
+			__( 'Performance summary', 'ad-placr' ),
 			array( __CLASS__, 'render_statistics_meta_box' ),
 			Ad_Placr_Ad::POST_TYPE,
-			'normal',
+			'side',
+			'high'
+		);
+
+		add_meta_box(
+			'ad-placr-embed',
+			__( 'Embed anywhere', 'ad-placr' ),
+			array( __CLASS__, 'render_embed_meta_box' ),
+			Ad_Placr_Ad::POST_TYPE,
+			'side',
 			'default'
 		);
 
@@ -916,8 +925,65 @@ final class Ad_Placr_Admin {
 				sandbox="allow-scripts allow-popups"
 				title="<?php esc_attr_e( 'Live placement preview', 'ad-placr' ); ?>"
 				loading="lazy"
-				data-ad-placr-preview-frame
-			></iframe>
+			data-ad-placr-preview-frame
+		></iframe>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the sidebar embed helpers: shortcode, PHP call, and ad identity.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param WP_Post $post Current Ad.
+	 * @return void
+	 */
+	public static function render_embed_meta_box( WP_Post $post ): void {
+		if ( ! current_user_can( Ad_Placr_Settings_Page::CAPABILITY ) ) {
+			return;
+		}
+
+		$ad_id     = (int) $post->ID;
+		$shortcode = '[ad_placr ad="' . $ad_id . '"]';
+		$php_call  = '<?php ad_placr_show_ad( ' . $ad_id . ' ); ?>';
+		$created   = get_the_date( '', $post );
+		$modified  = get_the_modified_date( '', $post );
+		?>
+		<div class="ad-placr-embed">
+			<div class="ad-placr-embed-field">
+				<label for="ad-placr-embed-shortcode"><strong><?php esc_html_e( 'Shortcode', 'ad-placr' ); ?></strong></label>
+				<div class="ad-placr-copy-box">
+					<input type="text" readonly id="ad-placr-embed-shortcode" value="<?php echo esc_attr( $shortcode ); ?>" onfocus="this.select()" />
+					<button type="button" class="button button-small" data-ad-placr-copy="<?php echo esc_attr( $shortcode ); ?>">
+						<?php esc_html_e( 'Copy', 'ad-placr' ); ?>
+					</button>
+				</div>
+				<p class="description"><?php esc_html_e( 'Paste into any post, page, or block to show this ad exactly there.', 'ad-placr' ); ?></p>
+			</div>
+
+			<div class="ad-placr-embed-field">
+				<label for="ad-placr-embed-php"><strong><?php esc_html_e( 'PHP function (templates)', 'ad-placr' ); ?></strong></label>
+				<div class="ad-placr-copy-box">
+					<input type="text" readonly id="ad-placr-embed-php" value="<?php echo esc_attr( $php_call ); ?>" onfocus="this.select()" />
+					<button type="button" class="button button-small" data-ad-placr-copy="<?php echo esc_attr( $php_call ); ?>">
+						<?php esc_html_e( 'Copy', 'ad-placr' ); ?>
+					</button>
+				</div>
+				<p class="description"><?php esc_html_e( 'For theme template files.', 'ad-placr' ); ?></p>
+			</div>
+
+			<p class="ad-placr-embed-meta">
+				<?php
+				printf(
+					/* translators: 1: Ad ID, 2: creation date, 3: last modified date. */
+					esc_html__( 'Ad #%1$s &middot; Created %2$s &middot; Modified %3$s', 'ad-placr' ),
+					esc_html( (string) $ad_id ),
+					esc_html( $created ),
+					esc_html( $modified )
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
