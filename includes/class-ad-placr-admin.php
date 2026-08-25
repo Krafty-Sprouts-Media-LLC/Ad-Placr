@@ -160,8 +160,58 @@ final class Ad_Placr_Admin {
 				'versionAdded'   => __( 'Ad version added.', 'ad-placr' ),
 				'versionLabel'   => __( 'Version', 'ad-placr' ),
 				'versionRemoved' => __( 'Ad version removed.', 'ad-placr' ),
+				'positions'      => self::position_editor_config(),
 			)
 		);
+	}
+
+	/**
+	 * Build the per-position UI configuration handed to the editor script.
+	 *
+	 * Derives everything the picker, contextual controls, and rules engine
+	 * need from the canonical registry so the JS never hardcodes keys.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return array<string, array{label:string, group:string, context:string, rules:string[], align:bool, para:?string}>
+	 */
+	public static function position_editor_config(): array {
+		$config = array();
+
+		foreach ( Ad_Placr_Positions::all() as $key => $descriptor ) {
+			$key     = (string) $key;
+			$context = isset( $descriptor['context'] ) ? (string) $descriptor['context'] : '';
+			$group   = isset( $descriptor['group'] ) ? (string) $descriptor['group'] : '';
+			$rules   = array();
+			$para    = null;
+
+			if ( 'global' === $context ) {
+				$rules = array( 'pagetypes', 'urlcontains' );
+			} elseif ( 'singular' === $context ) {
+				$rules = array( 'posttypes', 'taxonomies' );
+			} elseif ( in_array( $context, array( 'front_page', 'blog_index', 'archive', 'search' ), true ) ) {
+				$rules = array( 'urlcontains' );
+			} else { // manual contexts.
+				$rules = array();
+			}
+
+			if ( str_starts_with( $key, 'in_content_before_' ) ) {
+				$para = 'before';
+			} elseif ( str_starts_with( $key, 'in_content_after_' ) ) {
+				$para = 'after';
+			}
+
+			$config[ $key ] = array(
+				'label'   => Ad_Placr_Positions::label( $key ),
+				'group'   => $group,
+				'context' => $context,
+				'rules'   => $rules,
+				'align'   => Ad_Placr_Positions::supports_alignment( $key ),
+				'para'    => $para,
+			);
+		}
+
+		return $config;
 	}
 
 	/**
