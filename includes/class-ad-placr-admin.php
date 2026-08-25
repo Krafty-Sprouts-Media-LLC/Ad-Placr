@@ -169,6 +169,15 @@ final class Ad_Placr_Admin {
 					'listing'  => __( 'Scoped automatically to its own page type.', 'ad-placr' ),
 					'manual'   => __( 'Rendered wherever you embed it.', 'ad-placr' ),
 				),
+				'ruleHints'      => array(
+					'singular'   => __( 'Scoped automatically to posts because of the location — narrow further below.', 'ad-placr' ),
+					'global'     => __( 'This location exists on every page. Use page types to limit where it appears.', 'ad-placr' ),
+					'front_page' => __( 'Already limited to the front page.', 'ad-placr' ),
+					'blog_index' => __( 'Already limited to the blog index page.', 'ad-placr' ),
+					'archive'    => __( 'Already limited to archive pages.', 'ad-placr' ),
+					'manual'     => __( 'Rendered wherever you embed it.', 'ad-placr' ),
+					'widget'     => __( 'Rendered wherever you embed it.', 'ad-placr' ),
+				),
 			)
 		);
 	}
@@ -672,11 +681,11 @@ final class Ad_Placr_Admin {
 			'search'     => __( 'Search results', 'ad-placr' ),
 		);
 		?>
-		<p class="description"><?php esc_html_e( 'By default, this Ad can appear everywhere its display location is available.', 'ad-placr' ); ?></p>
+		<p class="description" data-ad-placr-rules-hint><?php esc_html_e( 'By default, this Ad can appear everywhere its display location is available.', 'ad-placr' ); ?></p>
 		<details class="ad-placr-rules" <?php echo $has_rules ? 'open' : ''; ?>>
 			<summary><?php esc_html_e( 'Only show on specific pages, devices, or schedules', 'ad-placr' ); ?></summary>
 			<div class="ad-placr-rules-grid">
-				<fieldset class="ad-placr-field" data-ad-placr-contexts-fieldset>
+				<fieldset class="ad-placr-field" data-ad-placr-contexts-fieldset data-ad-placr-rule="pagetypes">
 					<legend><strong><?php esc_html_e( 'Types of pages', 'ad-placr' ); ?></strong></legend>
 					<p class="description"><?php esc_html_e( 'Leave every option clear to allow all page types.', 'ad-placr' ); ?></p>
 					<?php foreach ( $context_choices as $key => $label ) : ?>
@@ -687,7 +696,7 @@ final class Ad_Placr_Admin {
 					<?php endforeach; ?>
 				</fieldset>
 
-				<fieldset class="ad-placr-field">
+				<fieldset class="ad-placr-field" data-ad-placr-rule="posttypes">
 					<legend><strong><?php esc_html_e( 'Content types', 'ad-placr' ); ?></strong></legend>
 					<p class="description"><?php esc_html_e( 'Applies when individual posts and pages are selected.', 'ad-placr' ); ?></p>
 					<?php foreach ( $type_choices as $type ) : ?>
@@ -698,7 +707,7 @@ final class Ad_Placr_Admin {
 					<?php endforeach; ?>
 				</fieldset>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="visitors">
 					<label for="ad-placr-user"><strong><?php esc_html_e( 'Visitors', 'ad-placr' ); ?></strong></label>
 					<select name="ad_placr_user" id="ad-placr-user">
 						<option value="any" <?php selected( $user, 'any' ); ?>><?php esc_html_e( 'Everyone', 'ad-placr' ); ?></option>
@@ -707,30 +716,30 @@ final class Ad_Placr_Admin {
 					</select>
 				</div>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="urlcontains">
 					<label for="ad-placr-url-contains"><strong><?php esc_html_e( 'URL contains', 'ad-placr' ); ?></strong></label>
 					<textarea class="large-text" rows="3" name="ad_placr_url_contains" id="ad-placr-url-contains"><?php echo esc_textarea( $url_lines ); ?></textarea>
 					<p class="description"><?php esc_html_e( 'Enter one path or phrase per line. Any matching line can show the Ad.', 'ad-placr' ); ?></p>
 				</div>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="taxonomies">
 					<label for="ad-placr-categories"><strong><?php esc_html_e( 'Only in category IDs', 'ad-placr' ); ?></strong></label>
 					<input type="text" class="widefat" name="ad_placr_include_categories" id="ad-placr-categories" value="<?php echo esc_attr( $categories ); ?>" />
 					<p class="description"><?php esc_html_e( 'Separate multiple numbers with commas.', 'ad-placr' ); ?></p>
 				</div>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="taxonomies">
 					<label for="ad-placr-tags"><strong><?php esc_html_e( 'Only with tag IDs', 'ad-placr' ); ?></strong></label>
 					<input type="text" class="widefat" name="ad_placr_include_tags" id="ad-placr-tags" value="<?php echo esc_attr( $tags ); ?>" />
 					<p class="description"><?php esc_html_e( 'Separate multiple numbers with commas.', 'ad-placr' ); ?></p>
 				</div>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="schedule">
 					<label for="ad-placr-schedule-start"><strong><?php esc_html_e( 'Start showing', 'ad-placr' ); ?></strong></label>
 					<input type="text" class="widefat" name="ad_placr_schedule_start" id="ad-placr-schedule-start" value="<?php echo esc_attr( (string) $schedule['start'] ); ?>" placeholder="YYYY-MM-DD HH:MM:SS" />
 				</div>
 
-				<div class="ad-placr-field">
+				<div class="ad-placr-field" data-ad-placr-rule="schedule">
 					<label for="ad-placr-schedule-end"><strong><?php esc_html_e( 'Stop showing', 'ad-placr' ); ?></strong></label>
 					<input type="text" class="widefat" name="ad_placr_schedule_end" id="ad-placr-schedule-end" value="<?php echo esc_attr( (string) $schedule['end'] ); ?>" placeholder="YYYY-MM-DD HH:MM:SS" />
 				</div>

@@ -81,8 +81,8 @@
 	display: none;
 }
 
-.ad-placr-rules {
-	margin-top: 16px;
+.ad-placr-rules-grid [hidden] {
+	display: none;
 }
 
 .ad-placr-rules > summary {

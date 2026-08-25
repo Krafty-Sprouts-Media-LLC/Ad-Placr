@@ -173,6 +173,15 @@
 			field.hidden = ! ( always || listed );
 		} );
 
+		const rulesHint = document.querySelector( '[data-ad-placr-rules-hint]' );
+		if ( rulesHint ) {
+			const hints = window.adPlacrAdmin && window.adPlacrAdmin.ruleHints ? window.adPlacrAdmin.ruleHints : {};
+			const hintContext = config && config.context ? config.context : '';
+			if ( hintContext && hints[ hintContext ] ) {
+				rulesHint.textContent = hints[ hintContext ];
+			}
+		}
+
 		syncMinimap( key );
 	}
 
