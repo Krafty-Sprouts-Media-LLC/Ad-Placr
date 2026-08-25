@@ -130,14 +130,11 @@ final class Ad_Placr_Renderer {
 	 * @return int Mobile maximum width in pixels.
 	 */
 	public static function resolve_mobile_breakpoint(): int {
-		/**
-		 * Filter the largest viewport width treated as Mobile.
-		 *
-		 * @since 2.7.0
-		 *
-		 * @param int $breakpoint Mobile maximum width in pixels.
+		/*
+		 * The settings layer owns the filter (and its stored-value default),
+		 * so renderer code reads the resolved number without re-filtering.
 		 */
-		$breakpoint = (int) apply_filters( 'ad_placr_mobile_breakpoint', 782 );
+		$breakpoint = Ad_Placr_Settings_Page::mobile_breakpoint();
 
 		return max( 320, min( 1200, $breakpoint ) );
 	}
@@ -150,14 +147,7 @@ final class Ad_Placr_Renderer {
 	 * @return int Tablet maximum width in pixels.
 	 */
 	public static function resolve_tablet_breakpoint(): int {
-		/**
-		 * Filter the largest viewport width treated as Tablet.
-		 *
-		 * @since 2.7.0
-		 *
-		 * @param int $breakpoint Tablet maximum width in pixels.
-		 */
-		$breakpoint = (int) apply_filters( 'ad_placr_tablet_breakpoint', 1024 );
+		$breakpoint = Ad_Placr_Settings_Page::tablet_breakpoint();
 
 		return max( self::resolve_mobile_breakpoint() + 1, min( 1600, $breakpoint ) );
 	}

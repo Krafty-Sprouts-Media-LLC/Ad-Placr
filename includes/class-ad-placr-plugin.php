@@ -89,6 +89,7 @@ final class Ad_Placr_Plugin {
 		Ad_Placr_Shortcode::register();
 		Ad_Placr_Widget::register();
 		Ad_Placr_Admin::register();
+		Ad_Placr_Dashboard::register();
 		Ad_Placr_Analytics::register();
 		Ad_Placr_Rest::register();
 		Ad_Placr_Ad::register();
@@ -124,8 +125,8 @@ final class Ad_Placr_Plugin {
 	/**
 	 * Default settings structure.
 	 *
-	 * Ads store their own display data. The settings option contains only the
-	 * site-wide statistics opt-in.
+	 * Ads store their own display data. The settings option holds the
+	 * statistics opt-in, the retention window, and the serving breakpoints.
 	 *
 	 * @since 0.1.0
 	 *
@@ -134,11 +135,14 @@ final class Ad_Placr_Plugin {
 	public static function default_settings(): array {
 		return array(
 			'analytics_enabled' => false,
+			'retention_days'    => 90,
+			'mobile_breakpoint' => 782,
+			'tablet_breakpoint' => 1024,
 		);
 	}
 
 	/**
-	 * Read the site-wide statistics setting in its stable shape.
+	 * Read the site-wide settings in their stable, clamped shape.
 	 *
 	 * @since 1.1.0
 	 *
@@ -151,8 +155,6 @@ final class Ad_Placr_Plugin {
 			$raw = array();
 		}
 
-		return array(
-			'analytics_enabled' => ! empty( $raw['analytics_enabled'] ),
-		);
+		return Ad_Placr_Settings_Page::normalize_shape( $raw );
 	}
 }

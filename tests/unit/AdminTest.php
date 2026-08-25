@@ -166,6 +166,14 @@ final class AdminTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( array( 'analytics_enabled' => true ), $updated );
+		$this->assertSame(
+			array(
+				'analytics_enabled' => true,
+				'retention_days'    => 90,
+				'mobile_breakpoint' => 782,
+				'tablet_breakpoint' => 1024,
+			),
+			$updated
+		);
 	}
 }

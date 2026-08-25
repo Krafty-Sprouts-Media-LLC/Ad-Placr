@@ -44,6 +44,7 @@ require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-targeting.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-shortcode.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-widget.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-admin.php';
+require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-dashboard.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-analytics.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-rest.php';
 require_once AD_PLACR_PLUGIN_DIR . 'includes/class-ad-placr-plugin-updater.php';

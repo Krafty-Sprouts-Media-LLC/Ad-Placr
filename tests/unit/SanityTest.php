@@ -130,7 +130,12 @@ final class SanityTest extends TestCase {
 	 */
 	public function test_default_settings_have_no_unreleased_legacy_sources(): void {
 		$this->assertSame(
-			array( 'analytics_enabled' => false ),
+			array(
+				'analytics_enabled' => false,
+				'retention_days'    => 90,
+				'mobile_breakpoint' => 782,
+				'tablet_breakpoint' => 1024,
+			),
 			Ad_Placr_Plugin::default_settings()
 		);
 	}
@@ -142,7 +147,7 @@ final class SanityTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function test_release_version_declarations_are_2_7_0(): void {
+	public function test_release_version_declarations_are_2_8_0(): void {
 		$root = dirname( __DIR__, 2 );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source scan.
@@ -150,9 +155,9 @@ final class SanityTest extends TestCase {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local source scan.
 		$readme = (string) file_get_contents( $root . '/readme.txt' );
 
-		$this->assertStringContainsString( 'Version:           2.7.0', $plugin );
-		$this->assertStringContainsString( "define( 'AD_PLACR_VERSION', '2.7.0' );", $plugin );
-		$this->assertStringContainsString( 'Stable tag: 2.7.0', $readme );
+		$this->assertStringContainsString( 'Version:           2.8.0', $plugin );
+		$this->assertStringContainsString( "define( 'AD_PLACR_VERSION', '2.8.0' );", $plugin );
+		$this->assertStringContainsString( 'Stable tag: 2.8.0', $readme );
 	}
 
 	/**

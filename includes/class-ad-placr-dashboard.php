@@ -275,7 +275,7 @@ final class Ad_Placr_Dashboard {
 		$ads = array();
 
 		foreach ( $posts as $post ) {
-			$ad_id       = (int) $post->ID;
+			$ad_id        = (int) $post->ID;
 			$position_key = (string) get_post_meta( $ad_id, Ad_Placr_Ad::META_POSITION, true );
 
 			/* Resolve human-readable label; fall back to the raw key. */

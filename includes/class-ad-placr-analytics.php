@@ -386,7 +386,7 @@ final class Ad_Placr_Analytics {
 		global $wpdb;
 
 		$table  = self::table_name();
-		$cutoff = self::retention_cutoff_gmt( time() );
+		$cutoff = self::retention_cutoff_gmt( time(), Ad_Placr_Settings_Page::retention_days() );
 
 		/*
 		 * Table name is `$wpdb->prefix` + constant only — splice after prepare

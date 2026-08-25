@@ -242,6 +242,10 @@ final class FrontendContextTest extends TestCase {
 	public function test_with_mobile_breakpoint_temporarily_bridges_the_unified_filter(): void {
 		$installed = null;
 
+		Functions\expect( 'get_option' )
+			->once()
+			->with( 'ad_placr_settings', array() )
+			->andReturn( array() );
 		Functions\expect( 'add_filter' )
 			->once()
 			->with(
