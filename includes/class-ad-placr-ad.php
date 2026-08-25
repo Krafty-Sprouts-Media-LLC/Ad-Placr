@@ -121,6 +121,7 @@ final class Ad_Placr_Ad {
 		$string_meta = array(
 			self::META_POSITION,
 			self::META_NOTES,
+			self::META_ALIGNMENT,
 		);
 		foreach ( $string_meta as $key ) {
 			register_post_meta(

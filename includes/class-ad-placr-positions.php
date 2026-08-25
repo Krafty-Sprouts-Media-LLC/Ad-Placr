@@ -308,6 +308,29 @@ final class Ad_Placr_Positions {
 	}
 
 	/**
+	 * Whether an automatic position can honor an alignment preference.
+	 *
+	 * Only positions placed inside or directly around flowing post content
+	 * have meaningful horizontal alignment; pinned bars, rails, listing
+	 * strips, and manual embeds do not.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $key Canonical position key.
+	 * @return bool True when the position supports alignment.
+	 */
+	public static function supports_alignment( string $key ): bool {
+		if ( ! self::exists( $key ) ) {
+			return false;
+		}
+
+		$all   = self::all();
+		$group = isset( $all[ $key ]['group'] ) ? (string) $all[ $key ]['group'] : '';
+
+		return in_array( $group, array( 'in_content', 'content' ), true );
+	}
+
+	/**
 	 * Position keys whose handler matches, optionally from a given registry.
 	 *
 	 * Pass `$registry` (e.g. defaults()) for pure unit tests; omit to use all().
