@@ -4,6 +4,21 @@ All notable changes to **Ad Placr** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 25/08/2026
+
+### Added
+
+- **Ad editor v2** — code-first one-screen editor with an area-and-spot placement picker, clickable
+  mini-map, contextual display rules, tabbed weighted versions, and a sandboxed live preview.
+- **Alignment** — left, center, or right wrapping on in-content and around-content locations. "None"
+  still prints network code untouched.
+- **Help tooltips and activation checklist** — hover help at the key controls, native submit box
+  labels (Save & Activate / Save & Pause), and a live code/location checklist.
+
+### Changed
+
+- Active/Paused is driven by the native WordPress publish box instead of a custom Status field.
+
 ## [2.7.0] - 26/07/2026
 
 ### Added

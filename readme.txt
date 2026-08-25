@@ -4,7 +4,7 @@ Tags: ads, advertising, ad manager, shortcode, analytics
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
-Stable tag: 2.7.0
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,6 +66,10 @@ automatic location so the choice is deliberate.
 No. The events table stores only event type, Ad ID, version ID, and timestamp.
 
 == Changelog ==
+
+= 2.8.0 =
+* Editor v2: visual placement picker, alignment, tabbed versions, sandboxed preview, and help
+  tooltips. See changelog.md.
 
 = 2.7.0 =
 * One-screen Ads, display locations and rules, weighted code versions, mobile code, unified
