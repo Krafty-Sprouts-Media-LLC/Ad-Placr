@@ -201,8 +201,18 @@ final class Ad_Placr_Renderer {
 		$inner           = self::build_slots_inner_html( $version['code'], $version['mobile_code'] );
 		$has_mobile_code = '' !== trim( $version['mobile_code'] );
 		$css             = self::build_responsive_css( '#' . $dom_id, $mobile_max, $tablet_max, $devices, $has_mobile_code );
-		$html            = '' !== $css ? '<style id="' . esc_attr( $dom_id . '-responsive' ) . '">' . $css . '</style>' : '';
-		$html           .= self::build_wrapper_html( $dom_id, $modifier, $inner, $ad_id, $version['version_id'] );
+		$alignment       = Ad_Placr_Ad::get_alignment( $ad_id );
+		if (
+			'none' !== $alignment
+			&& Ad_Placr_Positions::supports_alignment( Ad_Placr_Ad::get_position( $ad_id ) )
+		) {
+			$inner = '<div class="ad-placr-align ad-placr-align--' . esc_attr( $alignment ) . '">' . $inner . '</div>';
+			$css  .= '.ad-placr-align{display:flex;width:100%}.ad-placr-align--left{justify-content:flex-start}'
+				. '.ad-placr-align--center{justify-content:center}.ad-placr-align--right{justify-content:flex-end}'
+				. '.ad-placr-align>.ad-placr__slot{max-width:100%}';
+		}
+		$html  = '' !== $css ? '<style id="' . esc_attr( $dom_id . '-responsive' ) . '">' . $css . '</style>' : '';
+		$html .= self::build_wrapper_html( $dom_id, $modifier, $inner, $ad_id, $version['version_id'] );
 
 		if ( ! empty( $args['echo'] ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Ad network code; stored by privileged users.
